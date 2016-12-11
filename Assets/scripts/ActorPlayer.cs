@@ -35,6 +35,22 @@ public class ActorPlayer : ActorMove {
 		}
 	}
 
+	protected override void OnMeet (Actor other) {
+		Character otherCharacter = other.GetCharacter ();
+		if (character && otherCharacter && character.IsEnemy(otherCharacter)) {
+			// Enemy kills player
+			if (other.IsFacingTowards (transform.position)) {
+				character.Alive = false;
+				print ("PLAYER DIED");
+			}
+			// Player kills enemy
+			else {
+				other.GetCharacter ().Alive = false;
+				print ("Player killed enemy");
+			}
+		}
+	}
+
 	protected override void OnTurnStart () {
 		waitingForInput = false;
 		TryMoveTo (nodeSelected);

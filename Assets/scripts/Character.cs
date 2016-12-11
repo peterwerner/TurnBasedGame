@@ -15,6 +15,9 @@ public class Character : MonoBehaviour {
 		}
 		set {
 			alive = value;
+			if (!alive) {
+				OnDie ();
+			}
 		}
 	}
 
@@ -32,5 +35,7 @@ public class Character : MonoBehaviour {
 		}
 		return false;
 	}
+
+	protected virtual void OnDie () {}
 
 }
