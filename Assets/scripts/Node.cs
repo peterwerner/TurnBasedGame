@@ -104,8 +104,6 @@ namespace Level {
 			
 		[SerializeField] Directions directions;
 		List<Relationship> neighbors = new List<Relationship> ();
-		HashSet<Actor> actors = new HashSet<Actor> ();
-
 
 		public void UpdateNeighbors(List<Node> nodes) {
 			neighbors.Clear();
@@ -127,14 +125,6 @@ namespace Level {
 				}
 			}
 			return RelationshipTypes.NONE;
-		}
-
-		public void AddActor (Actor actor) {
-			actors.Add(actor);
-		}
-
-		public void RemoveActor (Actor actor) {
-			actors.Remove(actor);
 		}
 
 		public List<Node> GetNeighbors () {

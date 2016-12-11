@@ -6,7 +6,8 @@ public abstract class Actor : ListComponent<Actor> {
 
 	static HashSet<Actor> actorsFinished = new HashSet<Actor>();
 
-	protected Level.Node node;
+	protected Level.Node node, prevNode;
+	protected Character character;
 
 	public static void StartTurns () {
 		actorsFinished.Clear();
@@ -25,13 +26,33 @@ public abstract class Actor : ListComponent<Actor> {
 		return actorsFinished.Count >= InstanceList.Count;
 	}
 
+	public static void HandleInteractions () {
+		int i, j;
+		Actor a, b;
+		for (i = 0; i < InstanceList.Count - 1; i++) {
+			a = InstanceList [i];
+			for (j = i + 1; j < InstanceList.Count; j++) {
+				b = InstanceList [j];
+				if (a.node == b.node && a.prevNode != b.prevNode) {
+					a.OnMeet (b);
+					b.OnMeet (a);
+				}
+				if (a.node != b.node && a.prevNode == b.prevNode) {
+					a.OnSeparate (b);
+					b.OnSeparate (a);
+				}
+				if (a.node == b.prevNode && a.prevNode == b.node) {
+					a.OnMeetCrossing (b);
+					b.OnMeetCrossing (a);
+				}
+			}
+		}
+	}
+		
 	protected virtual void Start () {
+		character = GetComponent<Character> ();
 		node = Level.Node.ClosestTo (this.transform.position);
 	}
-
-	protected virtual void OnTurnStart () {}
-
-	protected virtual void OnTurnEnd () {}
 
 	protected void EndTurn () {
 		actorsFinished.Add(this);
@@ -43,9 +64,8 @@ public abstract class Actor : ListComponent<Actor> {
 		}
 		Level.Node.RelationshipTypes relationship = node.GetRelationship (destNode);
 		if (relationship != Level.Node.RelationshipTypes.NONE) {
-			node.RemoveActor (this);
+			prevNode = node;
 			node = destNode;
-			node.AddActor (this);
 		}
 		return relationship;
 	}
@@ -53,4 +73,20 @@ public abstract class Actor : ListComponent<Actor> {
 	protected bool IsTurnEnded () {
 		return !GameManager.IsInTurn() || actorsFinished.Contains (this);
 	}
+
+	public Character GetCharacter () {
+		return character;
+	}
+		
+	// Events for subclasses to override
+
+	protected virtual void OnTurnStart () {}
+
+	protected virtual void OnTurnEnd () {}
+
+	protected virtual void OnMeet (Actor other) {}
+
+	protected virtual void OnSeparate (Actor other) {}
+
+	protected virtual void OnMeetCrossing (Actor other) {}
 }

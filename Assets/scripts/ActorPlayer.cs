@@ -29,6 +29,12 @@ public class ActorPlayer : ActorMove {
 		}
 	}
 
+	protected override void OnMeetCrossing (Actor other) {
+		if (character && character.IsEnemy(other.GetCharacter())) {
+			character.Alive = false;
+		}
+	}
+
 	protected override void OnTurnStart () {
 		waitingForInput = false;
 		TryMoveTo (nodeSelected);

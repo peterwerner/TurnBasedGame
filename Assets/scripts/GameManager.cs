@@ -5,7 +5,6 @@ using UnityEngine;
 public class GameManager : SingletonComponent<GameManager> {
 
 	[SerializeField] int nodeLayer = 4;
-	float prevTurnStartTime = Mathf.NegativeInfinity;
 	bool isInTurn = false;
 
 	public static bool StartTurn() {
@@ -13,8 +12,8 @@ public class GameManager : SingletonComponent<GameManager> {
 			return false;
 		}
 		Instance.isInTurn = true;
-		Instance.prevTurnStartTime = Time.time;
 		Actor.StartTurns ();
+		Actor.HandleInteractions ();
 		return true;
 	}
 
