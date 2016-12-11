@@ -144,9 +144,10 @@ namespace Level {
 			}
 			return nodes;
 		}
-
+	
 
 		void Start() {
+			// TODO: do this at build time not at run time
 			UpdateNeighbors (Node.InstanceList);
 			gameObject.AddComponent<SphereCollider> ().radius = 0.25f * size;
 		}

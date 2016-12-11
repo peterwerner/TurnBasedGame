@@ -26,6 +26,7 @@ public class GameManager : SingletonComponent<GameManager> {
 		foreach (Level.Node node in Level.Node.InstanceList) {
 			node.gameObject.layer = nodeLayer;
 		}
+		Level.NodeAStar.Init ();
 	}
 
 	void Update () {
