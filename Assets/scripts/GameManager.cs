@@ -5,6 +5,7 @@ using UnityEngine;
 public class GameManager : SingletonComponent<GameManager> {
 
 	[SerializeField] int nodeLayer = 4;
+	[SerializeField] LayerMask nodeLineOfSightLayers;
 	bool isInTurn = false;
 
 	public static bool StartTurn() {
@@ -19,6 +20,10 @@ public class GameManager : SingletonComponent<GameManager> {
 
 	public static bool IsInTurn () {
 		return Instance.isInTurn;
+	}
+
+	public static LayerMask GetNodeLOSLayers () {
+		return Instance.nodeLineOfSightLayers;
 	}
 
 	void Start () {

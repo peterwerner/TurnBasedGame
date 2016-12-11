@@ -31,13 +31,19 @@ public class ActorPlayer : ActorMove {
 
 	protected override void OnMeetCrossing (Actor other) {
 		if (character && character.IsEnemy(other.GetCharacter())) {
-			character.Alive = false;
+			// TODO handle this somehow
+			// Enemy kills player
+			if (other.IsFacingTowards (transform.position)) {
+				character.Alive = false;
+				print ("PLAYER DIED");
+			}
 		}
 	}
 
 	protected override void OnMeet (Actor other) {
 		Character otherCharacter = other.GetCharacter ();
 		if (character && otherCharacter && character.IsEnemy(otherCharacter)) {
+			// TODO handle this somehow
 			// Enemy kills player
 			if (other.IsFacingTowards (transform.position)) {
 				character.Alive = false;
@@ -62,5 +68,16 @@ public class ActorPlayer : ActorMove {
 
 	void Awake() {
 		Instance = this;
+	}
+
+	protected override void OnDrawGizmos() {
+		base.OnDrawGizmos ();
+		if (node) {
+			Gizmos.color = Color.cyan;
+			Vector3 pos = transform.position + transform.up * 0.4f;
+			foreach (Actor actor in node.GetActorsInLOS()) {
+				Gizmos.DrawLine (pos, actor.transform.position + actor.transform.up * 0.4f);
+			}
+		}
 	}
 }

@@ -53,6 +53,7 @@ public class Actor : ListComponent<Actor> {
 	protected virtual void Start () {
 		character = GetComponent<Character> ();
 		node = Level.Node.ClosestTo (this.transform.position);
+		node.AddActor (this);
 		lookDir = transform.forward;
 	}
 
@@ -66,8 +67,10 @@ public class Actor : ListComponent<Actor> {
 		}
 		Level.Node.RelationshipTypes relationship = node.GetRelationship (destNode);
 		if (relationship != Level.Node.RelationshipTypes.NONE) {
+			node.RemoveActor (this);
 			prevNode = node;
 			node = destNode;
+			node.AddActor (this);
 			lookDir = (node.transform.position - prevNode.transform.position).normalized;
 		}
 		return relationship;
@@ -91,7 +94,7 @@ public class Actor : ListComponent<Actor> {
 		return Vector3.Angle (dir, look) <= 45;
 	}
 
-	void OnDrawGizmos() {
+	protected virtual void OnDrawGizmos() {
 		Gizmos.color = Color.magenta;
 		Vector3 pos = transform.position + transform.up * 0.1f;
 		Gizmos.DrawLine (pos, pos + lookDir * 0.5f);

@@ -104,6 +104,34 @@ namespace Level {
 			
 		[SerializeField] Directions directions;
 		List<Relationship> neighbors = new List<Relationship> ();
+		List<Node> nodesLOS = new List<Node> ();
+		HashSet<Actor> actors = new HashSet<Actor> ();
+
+		public void UpdateNodesLOS(List<Node> nodes) {
+			nodesLOS.Clear ();
+			Ray ray = new Ray (transform.position + transform.up * 0.26f * size, Vector3.zero);
+			RaycastHit hit;
+			RaycastHit[] hits;
+			Vector3[] directions = {
+				Vector3.up, Vector3.down, Vector3.left, Vector3.right, Vector3.forward, Vector3.back
+			};
+			float maxDist = size * InstanceList.Count;
+			LayerMask layers = GameManager.GetNodeLOSLayers (); // All layers that block LOS (including node layer)
+			LayerMask nodeLayerMask = 1 << gameObject.layer; // Node layer
+			foreach (Vector3 direction in directions) {
+				ray.direction = direction;
+				// Cast until we hit a boundary
+				bool didHit = Physics.Raycast (ray, out hit, maxDist, layers & ~nodeLayerMask);
+				// Cast to get all colliders closer than the boundary
+				hits = Physics.RaycastAll(ray, didHit ? hit.distance : maxDist, nodeLayerMask);
+				foreach (RaycastHit prospectiveHit in hits) {
+					Node node = prospectiveHit.collider.GetComponent<Node> ();
+					if (node && node != this) {
+						nodesLOS.Add (node);
+					}
+				}
+			}
+		}
 
 		public void UpdateNeighbors(List<Node> nodes) {
 			neighbors.Clear();
@@ -134,12 +162,36 @@ namespace Level {
 			}
 			return nodes;
 		}
+
+		public void AddActor (Actor actor) {
+			actors.Add(actor);
+		}
+
+		public void RemoveActor (Actor actor) {
+			actors.Remove(actor);
+		}
+
+		public HashSet<Actor> GetActors () {
+			return actors;
+		}
+
+		public List<Actor> GetActorsInLOS () {
+			List<Actor> actorsLOS = new List<Actor> ();
+			foreach (Node nodeLOS in nodesLOS) {
+				actorsLOS.AddRange (nodeLOS.actors);
+			}
+			return actorsLOS;
+		}
+
 	
+		void Awake () {
+			gameObject.AddComponent<SphereCollider> ().radius = 0.3f * size;
+		}
 
 		void Start() {
 			// TODO: do this at build time not at run time
 			UpdateNeighbors (Node.InstanceList);
-			gameObject.AddComponent<SphereCollider> ().radius = 0.25f * size;
+			UpdateNodesLOS (Node.InstanceList);
 		}
 
 		void OnMouseOver() {
