@@ -36,6 +36,6 @@ public class Character : MonoBehaviour {
 		return false;
 	}
 
-	protected virtual void OnDie () {}
+	protected virtual void OnDie () { GameObject.Destroy (gameObject); }
 
 }

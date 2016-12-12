@@ -73,9 +73,17 @@ public class ActorPlayer : ActorMove {
 	protected override void OnDrawGizmos() {
 		base.OnDrawGizmos ();
 		if (node) {
-			Gizmos.color = Color.cyan;
+			Actor actor;
 			Vector3 pos = transform.position + transform.up * 0.4f;
-			foreach (Actor actor in node.GetActorsInLOS()) {
+			Dictionary<Vector3, List<Actor> > actorsInLOS = node.GetActorsInLOS();
+			foreach (Vector3 direction in actorsInLOS.Keys) {
+				Gizmos.color = Color.yellow;
+				for (int i = 1; i < actorsInLOS [direction].Count; i++) {
+					actor = actorsInLOS [direction] [i];
+					Gizmos.DrawLine (pos, actor.transform.position + actor.transform.up * 0.4f);
+				}
+				actor = actorsInLOS [direction] [0];
+				Gizmos.color = Color.cyan;
 				Gizmos.DrawLine (pos, actor.transform.position + actor.transform.up * 0.4f);
 			}
 		}

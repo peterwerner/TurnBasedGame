@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using System.Linq;
 
 namespace Level {
 
@@ -9,6 +10,9 @@ namespace Level {
 
 		public static readonly float size = 1f;
 		static readonly float angleTolerance = 1f, distanceTolerance = 0.05f * size;
+		static readonly Vector3[] directionVectors = {
+			Vector3.up, Vector3.down, Vector3.left, Vector3.right, Vector3.forward, Vector3.back
+		};
 
 		public enum RelationshipTypes {
 			NONE,
@@ -104,7 +108,7 @@ namespace Level {
 			
 		[SerializeField] Directions directions;
 		List<Relationship> neighbors = new List<Relationship> ();
-		List<Node> nodesLOS = new List<Node> ();
+		Dictionary<Vector3, List<Node> > nodesLOS = new Dictionary<Vector3, List<Node> > ();
 		HashSet<Actor> actors = new HashSet<Actor> ();
 
 		public void UpdateNodesLOS(List<Node> nodes) {
@@ -112,24 +116,24 @@ namespace Level {
 			Ray ray = new Ray (transform.position + transform.up * 0.26f * size, Vector3.zero);
 			RaycastHit hit;
 			RaycastHit[] hits;
-			Vector3[] directions = {
-				Vector3.up, Vector3.down, Vector3.left, Vector3.right, Vector3.forward, Vector3.back
-			};
 			float maxDist = size * InstanceList.Count;
 			LayerMask layers = GameManager.GetNodeLOSLayers (); // All layers that block LOS (including node layer)
 			LayerMask nodeLayerMask = 1 << gameObject.layer; // Node layer
-			foreach (Vector3 direction in directions) {
+			foreach (Vector3 direction in directionVectors) {
 				ray.direction = direction;
 				// Cast until we hit a boundary
 				bool didHit = Physics.Raycast (ray, out hit, maxDist, layers & ~nodeLayerMask);
 				// Cast to get all colliders closer than the boundary
 				hits = Physics.RaycastAll(ray, didHit ? hit.distance : maxDist, nodeLayerMask);
+				nodesLOS [direction] = new List<Node> ();
 				foreach (RaycastHit prospectiveHit in hits) {
 					Node node = prospectiveHit.collider.GetComponent<Node> ();
 					if (node && node != this) {
-						nodesLOS.Add (node);
+						nodesLOS[direction].Add(node);
 					}
 				}
+				// Sort by distance such that the shortest distance is the first element
+				nodesLOS[direction].OrderBy(o => Vector3.SqrMagnitude(o.transform.position - transform.position)).ToList();
 			}
 		}
 
@@ -175,12 +179,18 @@ namespace Level {
 			return actors;
 		}
 
-		public List<Actor> GetActorsInLOS () {
-			List<Actor> actorsLOS = new List<Actor> ();
-			foreach (Node nodeLOS in nodesLOS) {
-				actorsLOS.AddRange (nodeLOS.actors);
+		public Dictionary<Vector3, List<Actor> > GetActorsInLOS () {
+			Dictionary<Vector3, List<Actor> > actorsDict = new Dictionary<Vector3, List<Actor> >();
+			foreach (Vector3 direction in nodesLOS.Keys) {
+				List<Actor> actorsLOS = new List<Actor> ();
+				foreach (Node node in nodesLOS[direction]) {
+					actorsLOS.AddRange (node.actors);
+				}
+				if (actorsLOS.Count > 0) {
+					actorsDict [direction] = actorsLOS;
+				}
 			}
-			return actorsLOS;
+			return actorsDict;
 		}
 
 	
