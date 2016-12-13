@@ -66,6 +66,8 @@ public class ActorPlayer : ActorMove {
 		else if (other is Inventory.Item) {
 			Inventory.Item item = (Inventory.Item) other;
 			item.PickUp (inventory);
+			// TODO temp test
+			item.Use ();
 		}
 	}
 

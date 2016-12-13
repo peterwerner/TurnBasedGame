@@ -53,7 +53,7 @@ public class Actor : ListComponent<Actor> {
 	protected virtual void Start () {
 		character = GetComponent<Character> ();
 		node = Level.Node.ClosestTo (this.transform.position);
-		node.AddActor (this);
+		node.AddActor (this, true);
 		lookDir = transform.forward;
 	}
 
@@ -96,6 +96,11 @@ public class Actor : ListComponent<Actor> {
 			look.y = 0;
 		}
 		return Vector3.Angle (dir, look) <= 45;
+	}
+
+	public void Meet (Actor other) {
+		this.OnMeet (other);
+		other.OnMeet (this);
 	}
 
 	protected virtual void OnDrawGizmos() {

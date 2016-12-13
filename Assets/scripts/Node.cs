@@ -74,7 +74,7 @@ namespace Level {
 					}
 				}
 				// Sort by distance such that the shortest distance is the first element
-				nodesLOS[direction].OrderBy(o => Vector3.SqrMagnitude(o.transform.position - transform.position)).ToList();
+				nodesLOS[direction].OrderBy(o => Vector3.SqrMagnitude(o.transform.position - transform.position));
 			}
 		}
 
@@ -102,7 +102,12 @@ namespace Level {
 			return neighbors.ToArray();
 		}
 	
-		public void AddActor (Actor actor) {
+		public void AddActor (Actor actor, bool doCallMeetCallback = false) {
+			if (doCallMeetCallback) {
+				foreach (Actor other in actors) {
+					actor.Meet (other);
+				}
+			}
 			actors.Add(actor);
 		}
 
