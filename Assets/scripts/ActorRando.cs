@@ -5,8 +5,8 @@ using UnityEngine;
 public class ActorRando : ActorMove {
 
 	protected override void OnTurnStart () {
-		List<Level.Node> options = node.GetNeighbors();
-		Level.Node randomNode = options[Random.Range(0, options.Count)];
+		Level.Node[] options = node.GetNeighbors();
+		Level.Node randomNode = options[Random.Range(0, options.Length)];
 		TryMoveTo (randomNode);
 	}
 		

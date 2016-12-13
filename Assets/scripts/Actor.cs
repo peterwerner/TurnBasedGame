@@ -61,19 +61,23 @@ public class Actor : ListComponent<Actor> {
 		actorsFinished.Add(this);
 	}
 
-	protected virtual Level.Node.RelationshipTypes TryMoveTo (Level.Node destNode) {
-		if (node == null || IsTurnEnded()) {
-			return Level.Node.RelationshipTypes.NONE;
-		}
-		Level.Node.RelationshipTypes relationship = node.GetRelationship (destNode);
-		if (relationship != Level.Node.RelationshipTypes.NONE) {
+	protected virtual bool TryMoveTo (Level.Node destNode) {
+		if (!IsTurnEnded() && CouldMoveTo(destNode)) {
 			node.RemoveActor (this);
 			prevNode = node;
 			node = destNode;
 			node.AddActor (this);
 			lookDir = (node.transform.position - prevNode.transform.position).normalized;
+			return true;
 		}
-		return relationship;
+		return false;
+	}
+
+	protected virtual bool CouldMoveTo (Level.Node destNode) {
+		if (node != null && node.HasNeighbor(destNode)) {
+			return true;
+		}
+		return false;
 	}
 
 	protected bool IsTurnEnded () {

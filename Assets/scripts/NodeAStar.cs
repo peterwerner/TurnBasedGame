@@ -40,8 +40,7 @@ namespace Level {
 				if (current == destination)
 					return GetPathList(start, destination);
 				// Update all successor nodes
-				List<Node> neighbors = current.GetNeighbors();
-				foreach (Node successor in neighbors) {
+				foreach (Node successor in current.GetNeighbors()) {
 					// If successor is already fully evaluated, skip it
 					if (closed.Contains(successor))
 						continue;

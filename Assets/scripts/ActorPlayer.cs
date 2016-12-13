@@ -2,11 +2,14 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+[RequireComponent(typeof(Character))]
+[RequireComponent(typeof(Inventory))]
 public class ActorPlayer : ActorMove {
 
 	public static ActorPlayer Instance;
 
 	Level.Node nodeSelected;
+	Inventory inventory;
 	bool waitingForInput = true;
 
 	public static void OnHoverNode (Level.Node node) {
@@ -21,10 +24,11 @@ public class ActorPlayer : ActorMove {
 
 	public static void OnClickNode (Level.Node node) {
 		if (Instance != null && !GameManager.IsInTurn() && Instance.waitingForInput) {
-			Level.Node.RelationshipTypes relationship = Instance.node.GetRelationship (node);
-			if (relationship != Level.Node.RelationshipTypes.NONE) {
+			if (Instance.CouldMoveTo (node)) {
 				Instance.nodeSelected = node;
 				GameManager.StartTurn ();
+			} else {
+				print ("BAD MOVE");
 			}
 		}
 	}
@@ -42,18 +46,26 @@ public class ActorPlayer : ActorMove {
 
 	protected override void OnMeet (Actor other) {
 		Character otherCharacter = other.GetCharacter ();
-		if (character && otherCharacter && character.IsEnemy(otherCharacter)) {
-			// TODO handle this somehow
-			// Enemy kills player
-			if (other.IsFacingTowards (transform.position)) {
-				character.Alive = false;
-				print ("PLAYER DIED");
+		// Meet another character
+		if (otherCharacter) {
+			if (character.IsEnemy (otherCharacter)) {
+				// TODO handle this somehow
+				// Enemy kills player
+				if (other.IsFacingTowards (transform.position)) {
+					character.Alive = false;
+					print ("PLAYER DIED");
+				}
+				// Player kills enemy
+				else {
+					other.GetCharacter ().Alive = false;
+					print ("Player killed enemy");
+				}
 			}
-			// Player kills enemy
-			else {
-				other.GetCharacter ().Alive = false;
-				print ("Player killed enemy");
-			}
+		} 
+		// Meet an item pickup
+		else if (other is Inventory.Item) {
+			Inventory.Item item = (Inventory.Item) other;
+			item.PickUp (inventory);
 		}
 	}
 
@@ -68,6 +80,7 @@ public class ActorPlayer : ActorMove {
 
 	void Awake() {
 		Instance = this;
+		inventory = GetComponent<Inventory> ();
 	}
 
 	protected override void OnDrawGizmos() {

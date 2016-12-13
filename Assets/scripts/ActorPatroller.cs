@@ -19,7 +19,7 @@ public class ActorPatroller : ActorMove {
 			waypointIndex = GetNextWaypointIndex ();
 			path = Level.NodeAStar.ShortestPath (node, waypoints [waypointIndex]);
 		}
-		TryMoveTo (path[0]);
+		TryMoveTo (path [0]);
 		path.RemoveAt (0);
 	}
 

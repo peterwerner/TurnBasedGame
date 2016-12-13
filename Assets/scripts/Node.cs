@@ -9,96 +9,36 @@ namespace Level {
 	public class Node : ListComponent<Node> {
 
 		public static readonly float size = 1f;
-		static readonly float angleTolerance = 1f, distanceTolerance = 0.05f * size;
 		static readonly Vector3[] directionVectors = {
 			Vector3.up, Vector3.down, Vector3.left, Vector3.right, Vector3.forward, Vector3.back
 		};
-
-		public enum RelationshipTypes {
-			NONE,
-			GROUND_GROUND,
-			WALL_WALL,
-			GROUND_WALL_UP,
-			GROUND_WALL_DOWN,
-			WALL_GROUND_UP,
-			WALL_GROUND_DOWN
-		};
-
-		// Relationship from this node to another node
-		private class Relationship {
-
-			public Node node;
-			public RelationshipTypes type;
-
-			public Relationship(Node node, RelationshipTypes type) {
-				this.node = node;
-				this.type = type;
-			}
-
-			// Returns the relationship a -> b (where the node field of the resulting Relationship is b)
-			public static Relationship GetRelationship(Node a, Node b) {
-				float verticalDistance = Mathf.Abs (a.transform.position.y - b.transform.position.y);
-				float horizontalDistance = Mathf.Sqrt (
-					Mathf.Pow(a.transform.position.x - b.transform.position.x, 2)
-					+ Mathf.Pow(a.transform.position.z - b.transform.position.z, 2)
-				);
-				// ground -> ...
-				if (Vector3.Angle (a.transform.up, Vector3.up) < 45) {
-					Vector3 horizontalDirection = b.transform.position - a.transform.position;
-					horizontalDirection.y = 0;
-					if (a.directions.IsEnabledInDirection(horizontalDirection)) {
-						// ground -> ground
-						if (Vector3.Angle (b.transform.up, Vector3.up) < angleTolerance) {
-							if (verticalDistance < distanceTolerance
-								&& Mathf.Abs (horizontalDistance - size) < distanceTolerance
-								&& b.directions.IsEnabledInDirection(horizontalDirection * -1)
-							) {
-								return new Relationship (b, RelationshipTypes.GROUND_GROUND);
-							}
-						}
-						// ground -> wall (climb up)
-						// ground -> wall (climb down)
-					}
-				} 
-				// wall -> ...
-				else {
-					// wall -> wall
-					// wall -> ground (climb up)
-					// wall -> ground (climb down)
-					// none
-				}
-				return null;
-			}
-		}
 
 
 		// Directions in which this can have neighbors (by default any direction is allowed)
 		[Serializable] private class Directions {
 			
-			public bool up = true, down = false, forward = true, back = true, left = true, right = true;
+			[SerializeField] bool up = true, forward = true, back = true, left = true, right = true;
+			Dictionary<Vector3, bool> table = new Dictionary<Vector3, bool> ();
+
+			public void Init () {
+				table [Vector3.up] = up;
+				table [Vector3.left] = left;
+				table [Vector3.right] = right;
+				table [Vector3.forward] = forward;
+				table [Vector3.back] = back;
+				table [Vector3.down] = false;
+			}
 
 			public void DrawGizmo(Vector3 pos, float size) {
-				DrawLine (pos, size, Vector3.up, up);
-				DrawLine (pos, size, Vector3.down, down);
-				DrawLine (pos, size, Vector3.forward, forward);
-				DrawLine (pos, size, Vector3.back, back);
-				DrawLine (pos, size, Vector3.left, left);
-				DrawLine (pos, size, Vector3.right, right);
+				foreach (Vector3 dir in table.Keys) {
+					Gizmos.color = table[dir] ? Color.green : Color.red;
+					Gizmos.DrawLine(pos, pos + size * dir);
+				}
 			}
 
 			public bool IsEnabledInDirection(Vector3 direction) {
-				if (Vector3.Angle(direction, Vector3.up) < angleTolerance) { return up; }
-				if (Vector3.Angle(direction, Vector3.down) < angleTolerance) { return down; }
-				if (Vector3.Angle(direction, Vector3.forward) < angleTolerance) { return forward; }
-				if (Vector3.Angle(direction, Vector3.back) < angleTolerance) { return back; }
-				if (Vector3.Angle(direction, Vector3.left) < angleTolerance) { return left; }
-				if (Vector3.Angle(direction, Vector3.right) < angleTolerance) { return right; }
-				return false;
-			}
-
-			private void DrawLine(Vector3 pos, float size, Vector3 dir, bool condition) {
-				Gizmos.color = condition ? Color.green : Color.red;
-				Gizmos.DrawLine(pos, pos + size * dir);
+				bool result;
+				return table.TryGetValue (direction, out result) && result;
 			}
 		}
 
@@ -106,12 +46,13 @@ namespace Level {
 		/* Node */
 
 			
-		[SerializeField] Directions directions;
-		List<Relationship> neighbors = new List<Relationship> ();
+		[SerializeField] Directions directionsAllowed;
+		List<Node> neighbors = new List<Node> ();
 		Dictionary<Vector3, List<Node> > nodesLOS = new Dictionary<Vector3, List<Node> > ();
 		HashSet<Actor> actors = new HashSet<Actor> ();
+		Vector3 direction;
 
-		public void UpdateNodesLOS(List<Node> nodes) {
+		void UpdateNodesLOS(List<Node> nodes) {
 			nodesLOS.Clear ();
 			Ray ray = new Ray (transform.position + transform.up * 0.26f * size, Vector3.zero);
 			RaycastHit hit;
@@ -137,36 +78,30 @@ namespace Level {
 			}
 		}
 
-		public void UpdateNeighbors(List<Node> nodes) {
+		void UpdateNeighbors(List<Node> nodes) {
 			neighbors.Clear();
 			foreach (Node node in nodes){
-				if (node != this)
-				{
-					Relationship relationship = Relationship.GetRelationship (this, node);
-					if (relationship != null) {
-						neighbors.Add (relationship);
-					}
+				if (IsConnectable(node)) {
+					neighbors.Add (node);
 				}
 			}
 		}
 
-		public RelationshipTypes GetRelationship (Node node) {
-			foreach (Relationship relationship in neighbors) {
-				if (relationship.node == node) {
-					return relationship.type;
+		void UpdateDirection() {
+			float angleMin = 181;
+			foreach (Vector3 direction in directionVectors) {
+				float angle = Vector3.Angle (direction, transform.up);
+				if (angle < angleMin) {
+					angleMin = angle;
+					this.direction = direction;
 				}
 			}
-			return RelationshipTypes.NONE;
 		}
 
-		public List<Node> GetNeighbors () {
-			List<Node> nodes = new List<Node> ();
-			foreach (Relationship relationship in neighbors) {
-				nodes.Add (relationship.node);
-			}
-			return nodes;
+		public Node[] GetNeighbors () {
+			return neighbors.ToArray();
 		}
-
+	
 		public void AddActor (Actor actor) {
 			actors.Add(actor);
 		}
@@ -193,9 +128,62 @@ namespace Level {
 			return actorsDict;
 		}
 
+		/* Helpers for determining relationship */
+
+		bool IsConnectable (Node other) {
+			// If other is within 1 'size' of this, it may be connectable
+			if (other != this && Vector3.SqrMagnitude (transform.position - other.transform.position) <= size * size + Mathf.Epsilon) {
+				// Same plane, must be adjacent
+				if (direction == other.direction) {
+					return Mathf.Approximately (
+							Vector3.Scale (transform.position, direction).sqrMagnitude,
+							Vector3.Scale (other.transform.position, direction).sqrMagnitude
+						)
+						&& Mathf.Approximately (
+							Vector3.Distance(transform.position, other.transform.position),
+							size
+						);
+				}
+				// 90-degree difference between planes, must be on the same 'cube' ( _| or |_ etc )
+				if (Mathf.Approximately (Vector3.Angle (direction, other.direction), 90)) {
+					return Mathf.Approximately (Vector3.Distance (
+							transform.position + direction * size * 0.5f,
+							other.transform.position + other.direction * size * 0.5f
+						), 0)
+						|| Mathf.Approximately (Vector3.Distance (
+							transform.position - direction * size * 0.5f,
+							other.transform.position - other.direction * size * 0.5f
+						), 0); 
+				}
+			}
+			return false;
+		}
+
+		public Vector3 Direction {
+			get { return direction; }
+		}
+
+		public bool IsWall () {
+			return direction != Vector3.up && direction != Vector3.down;
+		}
+
+		public bool IsAbove (Node other) {
+			return transform.position.y > other.transform.position.y + Mathf.Epsilon;
+		}
+
+		public bool IsBelow (Node other) {
+			return transform.position.y + Mathf.Epsilon < other.transform.position.y;
+		}
+
+		public bool HasNeighbor (Node other) {
+			return neighbors.Contains(other);
+		}
+
+		/* Lifecycle */
 	
 		void Awake () {
 			gameObject.AddComponent<SphereCollider> ().radius = 0.3f * size;
+			UpdateDirection ();
 		}
 
 		void Start() {
@@ -217,11 +205,11 @@ namespace Level {
 		void OnDrawGizmos() {
 			Gizmos.color = Color.white;
 			Gizmos.DrawLine (transform.position, transform.position + transform.up * 0.3f);
-			directions.DrawGizmo (transform.position, size * 0.15f);
+			directionsAllowed.DrawGizmo (transform.position, size * 0.15f);
 			Gizmos.color = Color.green;
 			if (neighbors != null) {
-				foreach (Relationship relationship in neighbors) {
-					Gizmos.DrawLine (this.transform.position, relationship.node.transform.position);
+				foreach (Node neighbor in neighbors) {
+					Gizmos.DrawLine (this.transform.position, neighbor.transform.position);
 				}
 			}
 		}
