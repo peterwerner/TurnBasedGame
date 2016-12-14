@@ -18,8 +18,12 @@ public class GameManager : SingletonComponent<GameManager> {
 		return true;
 	}
 
-	public static bool IsInTurn () {
-		return Instance.isInTurn;
+	public static bool IsInTurn {
+		get { return Instance.isInTurn; }
+	}
+
+	public static bool PlayerCanMove {
+		get { return !IsInTurn && !Inventory.Item.IsAnyInstanceBeingUsed(); }
 	}
 
 	public static LayerMask GetNodeLOSLayers () {

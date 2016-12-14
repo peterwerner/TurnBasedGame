@@ -7,14 +7,15 @@ public class ItemGun : Inventory.Item {
 	[SerializeField] Projectile projectilePrefab;
 	Actor target;
 
-	protected override void OnUse () { 
+	protected override void OnUse () {
 		// TODO dont just auto shoot at the first target
-		Dictionary<Vector3, List<Actor> > actorsInLOS = node.GetActorsInLOS();
+		Dictionary<Vector3, List<Actor> > actorsInLOS = Owner.Node.GetActorsInLOS();
 		foreach (Vector3 direction in actorsInLOS.Keys) {
 			foreach (Actor actorInLOS in actorsInLOS [direction]) {
 				if (Owner.GetCharacter().IsEnemy(actorInLOS.GetCharacter())) {
 					target = actorInLOS;
-					Shoot();
+					Shoot ();
+					DestroyButton ();
 					return;
 				}
 			}
@@ -30,5 +31,6 @@ public class ItemGun : Inventory.Item {
 			target.GetCharacter ().Alive = false;
 		}
 		Destroy ();
+		EndTurn ();
 	}
 }

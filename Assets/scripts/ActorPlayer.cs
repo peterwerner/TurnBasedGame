@@ -13,17 +13,17 @@ public class ActorPlayer : ActorMove {
 	bool waitingForInput = true;
 
 	public static void OnHoverNode (Level.Node node) {
-		if (Instance != null && !GameManager.IsInTurn() && Instance.waitingForInput) {
+		if (Instance != null && !GameManager.IsInTurn && Instance.waitingForInput) {
 		}
 	}
 
 	public static void OnUnhoverNode (Level.Node node) {
-		if (Instance != null && !GameManager.IsInTurn() && Instance.waitingForInput) {
+		if (Instance != null && !GameManager.IsInTurn && Instance.waitingForInput) {
 		}
 	}
 
 	public static void OnClickNode (Level.Node node) {
-		if (Instance != null && !GameManager.IsInTurn() && Instance.waitingForInput) {
+		if (Instance != null && GameManager.PlayerCanMove && Instance.waitingForInput) {
 			if (Instance.CouldMoveTo (node)) {
 				Instance.nodeSelected = node;
 				GameManager.StartTurn ();
@@ -66,8 +66,6 @@ public class ActorPlayer : ActorMove {
 		else if (other is Inventory.Item) {
 			Inventory.Item item = (Inventory.Item) other;
 			item.PickUp (inventory);
-			// TODO temp test
-			item.Use ();
 		}
 	}
 
@@ -95,11 +93,15 @@ public class ActorPlayer : ActorMove {
 				Gizmos.color = Color.yellow;
 				for (int i = 1; i < actorsInLOS [direction].Count; i++) {
 					actor = actorsInLOS [direction] [i];
-					Gizmos.DrawLine (pos, actor.transform.position + actor.transform.up * 0.4f);
+					if (actor) {
+						Gizmos.DrawLine (pos, actor.transform.position + actor.transform.up * 0.4f);
+					}
 				}
 				actor = actorsInLOS [direction] [0];
-				Gizmos.color = Color.cyan;
-				Gizmos.DrawLine (pos, actor.transform.position + actor.transform.up * 0.4f);
+				if (actor) {
+					Gizmos.color = Color.cyan;
+					Gizmos.DrawLine (pos, actor.transform.position + actor.transform.up * 0.4f);
+				}
 			}
 		}
 	}

@@ -81,7 +81,7 @@ public class Actor : ListComponent<Actor> {
 	}
 
 	protected bool IsTurnEnded () {
-		return !GameManager.IsInTurn() || actorsFinished.Contains (this);
+		return !GameManager.IsInTurn || actorsFinished.Contains (this);
 	}
 
 	public Character GetCharacter () {
@@ -103,10 +103,20 @@ public class Actor : ListComponent<Actor> {
 		other.OnMeet (this);
 	}
 
+	public Level.Node Node {
+		get { return node; }
+	}
+
 	protected virtual void OnDrawGizmos() {
 		Gizmos.color = Color.magenta;
 		Vector3 pos = transform.position + transform.up * 0.1f;
 		Gizmos.DrawLine (pos, pos + lookDir * 0.5f);
+	}
+
+	void OnDestroy () {
+		if (node) {
+			node.RemoveActor (this);
+		}
 	}
 		
 	// Events for subclasses to override

@@ -6,10 +6,18 @@ using UnityEngine;
 public class Inventory : MonoBehaviour {
 
 	public class Item : Actor {
+
+		static bool isAnyInstanceBeingUsed = false;
+
 		Inventory inventory;
 		bool isBeingUsed = false;
-		
+		// UI
+		CustomUI.Button button;
+
 		public void PickUp (Inventory inventory) {
+			if (node) {
+				node.RemoveActor (this);
+			}
 			this.inventory = inventory;
 			this.inventory.items.Add (this);
 			gameObject.SetActive (false);
@@ -17,36 +25,49 @@ public class Inventory : MonoBehaviour {
 			transform.parent = inventory.transform;
 			transform.localPosition = Vector3.zero;
 			OnPickUp ();
+			// UI
+			button = Instantiate (this.inventory.buttonPrefab, this.inventory.itemButtonParent);
+			this.inventory.buttonListUI.Show (button);
+			button.Show (Use, CancelUse, IsUseable);
 		}
 
 		public void Use () {
-			isBeingUsed = true;
-			OnUse ();
+			if (IsUseable()) {
+				isBeingUsed = true;
+				isAnyInstanceBeingUsed = isBeingUsed;
+				OnUse ();
+			}
 		}
 
 		public void CancelUse () {
-			isBeingUsed = false;
-			OnCancelUse ();
+			if (isBeingUsed) {
+				isBeingUsed = false;
+				isAnyInstanceBeingUsed = isBeingUsed;
+				OnCancelUse ();
+				button.Cancel ();
+			}
+		}
+
+		public void DestroyButton () {
+			if (button) {
+				this.inventory.buttonListUI.Hide (button);
+				button.Hide ();
+				button = null;
+			}
 		}
 
 		public void Destroy () {
+			if (button) {
+				DestroyButton ();
+			}
 			isBeingUsed = false;
+			isAnyInstanceBeingUsed = isBeingUsed;
 			inventory.items.Remove (this);
 			inventory = null;
 			enabled = false;
 			GameObject.Destroy (gameObject);
 		}
-
-		public void Drop () {
-			throw new System.Exception ("not implemented!!!");
-			/*
-			this.inventory.items.Remove (this);
-			this.inventory = null;
-			this.gameObject.SetActive (true);
-			OnDrop ();
-			*/
-		}
-
+			
 		public Actor Owner {
 			get { return inventory.owner; }
 		}
@@ -55,17 +76,29 @@ public class Inventory : MonoBehaviour {
 			get { return isBeingUsed; }
 		}
 
-		protected virtual void OnUse () { print ("use"); }
-		protected virtual void OnCancelUse () { print ("cancel use"); }
-		protected virtual void OnDestroy () { print ("destroy"); }
-		protected virtual void OnPickUp () { print ("pickup"); }
-		protected virtual void OnDrop () { print ("drop"); }
+		public bool IsUseable () {
+			return !GameManager.IsInTurn && !isAnyInstanceBeingUsed;
+		}
+
+		public static bool IsAnyInstanceBeingUsed () {
+			return isAnyInstanceBeingUsed;
+		}
+
+		protected virtual void OnUse () {}
+		protected virtual void OnCancelUse () {}
+		protected virtual void OnDestroy () {}
+		protected virtual void OnPickUp () {}
 	}
 
 	List<Item> items = new List<Item> ();
 	Actor owner;
+	// UI
+	[SerializeField] CustomUI.Button buttonPrefab;
+	[SerializeField] Transform itemButtonParent;
+	CustomUI.ButtonList buttonListUI = new CustomUI.ButtonList ();
 
 	void Awake () {
 		owner = GetComponent<Actor> ();
 	}
+
 }
