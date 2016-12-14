@@ -20,6 +20,7 @@ public class ItemGun : Inventory.Item {
 				}
 			}
 		}
+		CancelUse ();
 	}
 
 	void Shoot () {
