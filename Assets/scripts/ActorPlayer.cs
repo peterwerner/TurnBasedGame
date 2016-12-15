@@ -17,6 +17,7 @@ public class ActorPlayer : ActorMove {
 			if (other.IsFacingTowards (transform.position)) {
 				character.Alive = false;
 				print ("PLAYER DIED");
+				UnityEditor.EditorApplication.isPlaying = false; // editor only
 			}
 		}
 	}
@@ -31,6 +32,7 @@ public class ActorPlayer : ActorMove {
 				if (other.IsFacingTowards (transform.position)) {
 					character.Alive = false;
 					print ("PLAYER DIED");
+					UnityEditor.EditorApplication.isPlaying = false; // editor only
 				}
 				// Player kills enemy
 				else {

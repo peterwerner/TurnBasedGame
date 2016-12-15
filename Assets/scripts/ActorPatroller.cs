@@ -6,12 +6,16 @@ public class ActorPatroller : ActorMove {
 
 	private enum LoopTypes { LOOP, REVERSE };
 
-	[SerializeField] Level.Node[] waypoints;
 	[SerializeField] LoopTypes loopType;
-	List<Level.Node> path;
-	int waypointIndex = 0, step = 1;
+	[SerializeField] protected Level.Node[] waypoints;
+	protected List<Level.Node> path;
+	protected int waypointIndex = 0, step = 1;
 
 	protected override void OnTurnStart () {
+		MoveToNextNode ();
+	}
+
+	protected void MoveToNextNode () {
 		if (path == null) {
 			path = Level.NodeAStar.ShortestPath (node, waypoints [waypointIndex]);
 		} 
@@ -23,7 +27,7 @@ public class ActorPatroller : ActorMove {
 		path.RemoveAt (0);
 	}
 
-	int GetNextWaypointIndex () {
+	protected int GetNextWaypointIndex () {
 		int nextIndex = waypointIndex + step;
 		if (nextIndex >= waypoints.Length || nextIndex < 0) {
 			if (loopType == LoopTypes.LOOP) {
