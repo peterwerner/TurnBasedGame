@@ -55,6 +55,12 @@ namespace Level {
 
 		public static void InitAll () {
 			foreach (Node node in InstanceList) {
+				node.UpdateDirection ();
+				foreach (Collider col in node.gameObject.GetComponents<Collider> ()) {
+					DestroyImmediate (col);
+				}
+			}
+			foreach (Node node in InstanceList) {
 				node.UpdateNeighbors (InstanceList);
 				node.sphereCol = node.gameObject.AddComponent<SphereCollider> ();
 			}
@@ -62,7 +68,7 @@ namespace Level {
 				node.UpdateNodesLOS (InstanceList);
 			}
 			foreach (Node node in InstanceList) {
-				Destroy (node.gameObject.GetComponent<SphereCollider> ());
+				DestroyImmediate (node.gameObject.GetComponent<SphereCollider> ());
 				BoxCollider boxCollider = node.gameObject.AddComponent<BoxCollider> ();
 				boxCollider.size = new Vector3 (size, 0.02f, size);
 			}
@@ -155,28 +161,40 @@ namespace Level {
 
 		bool IsConnectable (Node other) {
 			// If other is within 1 'size' of this, it may be connectable
-			if (other != this && Vector3.SqrMagnitude (transform.position - other.transform.position) <= size * size + Mathf.Epsilon) {
+			if (other != this && Vector3.SqrMagnitude (transform.position - other.transform.position) <= size * size * 1.1f) {
 				// Same plane, must be adjacent
 				if (direction == other.direction) {
 					return Mathf.Approximately (
-							Vector3.Scale (transform.position, direction).sqrMagnitude,
-							Vector3.Scale (other.transform.position, direction).sqrMagnitude
-						)
-						&& Mathf.Approximately (
-							Vector3.Distance(transform.position, other.transform.position),
-							size
-						);
+						Vector3.Scale (transform.position, direction).sqrMagnitude,
+						Vector3.Scale (other.transform.position, direction).sqrMagnitude
+					)
+					&& Mathf.Approximately (
+						Vector3.Distance (transform.position, other.transform.position),
+						size
+					)
+					&& directionsAllowed.IsEnabledInDirection (
+						VectorUtil.ClosestCardinalDirection (other.transform.position - transform.position)
+					)
+					&& other.directionsAllowed.IsEnabledInDirection (
+						VectorUtil.ClosestCardinalDirection (transform.position - other.transform.position)
+					);
 				}
 				// 90-degree difference between planes, must be on the same 'cube' ( _| or |_ etc )
 				if (Mathf.Approximately (Vector3.Angle (direction, other.direction), 90)) {
 					return Mathf.Approximately (Vector3.Distance (
-							transform.position + direction * size * 0.5f,
-							other.transform.position + other.direction * size * 0.5f
-						), 0)
-						|| Mathf.Approximately (Vector3.Distance (
-							transform.position - direction * size * 0.5f,
-							other.transform.position - other.direction * size * 0.5f
-						), 0); 
+						transform.position + direction * size * 0.5f,
+						other.transform.position + other.direction * size * 0.5f
+					), 0)
+					|| Mathf.Approximately (Vector3.Distance (
+						transform.position - direction * size * 0.5f,
+						other.transform.position - other.direction * size * 0.5f
+					), 0)
+					&& directionsAllowed.IsEnabledInDirection (
+						VectorUtil.ClosestCardinalDirection (other.transform.position - transform.position, false)
+					)
+					&& other.directionsAllowed.IsEnabledInDirection (
+						VectorUtil.ClosestCardinalDirection (transform.position - other.transform.position, false)
+					);
 				}
 			}
 			return false;
@@ -202,16 +220,18 @@ namespace Level {
 			return neighbors.Contains(other);
 		}
 
-		/* Lifecycle */
-	
+
 		void Awake () {
-			UpdateDirection ();
+			if (directionsAllowed == null) {
+				directionsAllowed = new Directions ();
+			}
 		}
+
 
 		void OnDrawGizmos() {
 			Gizmos.color = Color.white;
 			Gizmos.DrawLine (transform.position, transform.position + transform.up * 0.3f);
-			directionsAllowed.DrawGizmo (transform.position, size * 0.15f);
+			directionsAllowed.DrawGizmo (transform.position + transform.up * 0.01f, size * 0.15f);
 			Gizmos.color = Color.green;
 			if (neighbors != null) {
 				foreach (Node neighbor in neighbors) {

@@ -1,8 +1,23 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEditor;
 
 public class GameManager : SingletonComponent<GameManager> {
+
+	[CustomEditor(typeof(GameManager))]
+	public class GameManagerEditor : Editor
+	{
+		public override void OnInspectorGUI()
+		{
+			DrawDefaultInspector();
+			GameManager myScript = (GameManager)target;
+			if (GUILayout.Button ("Force Refresh Node Relationships")) {
+				myScript.Setup ();
+				Level.Node.InitAll();
+			}
+		}
+	}
 
 	[SerializeField] int nodeLayer = 4;
 	[SerializeField] LayerMask nodeLineOfSightLayers;
