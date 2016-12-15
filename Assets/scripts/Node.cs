@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace Level {
 
-	public class Node : ListComponent<Node> {
+	public class Node : ListComponentLive<Node> {
 
 		public static readonly float size = 1f;
 		static readonly Vector3[] directionVectors = {
@@ -55,6 +55,7 @@ namespace Level {
 
 		public static void InitAll () {
 			foreach (Node node in InstanceList) {
+				node.directionsAllowed.Init ();
 				node.UpdateDirection ();
 				foreach (Collider col in node.gameObject.GetComponents<Collider> ()) {
 					DestroyImmediate (col);
@@ -227,6 +228,14 @@ namespace Level {
 			}
 		}
 
+		// Editor only
+
+		void OnValidate () {
+			directionsAllowed.Init ();
+			foreach (Node node in InstanceList) {
+				UpdateNeighbors (InstanceList);
+			}
+		}
 
 		void OnDrawGizmos() {
 			Gizmos.color = Color.white;
