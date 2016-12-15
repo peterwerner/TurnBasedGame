@@ -6,32 +6,9 @@ using UnityEngine;
 [RequireComponent(typeof(Inventory))]
 public class ActorPlayer : ActorMove {
 
-	public static ActorPlayer Instance;
-
 	Level.Node nodeSelected;
 	Inventory inventory;
 	bool waitingForInput = true;
-
-	public static void OnHoverNode (Level.Node node) {
-		if (Instance != null && !GameManager.IsInTurn && Instance.waitingForInput) {
-		}
-	}
-
-	public static void OnUnhoverNode (Level.Node node) {
-		if (Instance != null && !GameManager.IsInTurn && Instance.waitingForInput) {
-		}
-	}
-
-	public static void OnClickNode (Level.Node node) {
-		if (Instance != null && GameManager.PlayerCanMove && Instance.waitingForInput) {
-			if (Instance.CouldMoveTo (node)) {
-				Instance.nodeSelected = node;
-				GameManager.StartTurn ();
-			} else {
-				print ("BAD MOVE");
-			}
-		}
-	}
 
 	protected override void OnMeetCrossing (Actor other) {
 		if (character && character.IsEnemy(other.GetCharacter())) {
@@ -79,8 +56,43 @@ public class ActorPlayer : ActorMove {
 	}
 
 	void Awake() {
-		Instance = this;
 		inventory = GetComponent<Inventory> ();
+	}
+
+	protected override void Update () {
+		base.Update ();
+		if (Input.GetMouseButtonDown(0)) {
+			Ray ray = Camera.main.ScreenPointToRay (Input.mousePosition);
+			RaycastHit hit;
+			LayerMask layerMask = 1 << GameManager.GetNodeLayer ();
+			if (Physics.Raycast (ray, out hit, Mathf.Infinity, layerMask)) {
+				Level.Node node = hit.collider.GetComponent<Level.Node> ();
+				if (node) {
+					OnClickNode (node);
+				}
+			}
+		}
+	}
+
+	void OnHoverNode (Level.Node node) {
+		if (!GameManager.IsInTurn && waitingForInput) {
+		}
+	}
+
+	void OnUnhoverNode (Level.Node node) {
+		if (!GameManager.IsInTurn && waitingForInput) {
+		}
+	}
+
+	void OnClickNode (Level.Node node) {
+		if (GameManager.PlayerCanMove && waitingForInput) {
+			if (CouldMoveTo (node)) {
+				nodeSelected = node;
+				GameManager.StartTurn ();
+			} else {
+				print ("BAD MOVE");
+			}
+		}
 	}
 
 	protected override void OnDrawGizmos() {

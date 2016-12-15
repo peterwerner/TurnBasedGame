@@ -30,11 +30,16 @@ public class GameManager : SingletonComponent<GameManager> {
 		return Instance.nodeLineOfSightLayers;
 	}
 
+	public static int GetNodeLayer () {
+		return Instance.nodeLayer;
+	}
+
 	void Start () {
 		foreach (Level.Node node in Level.Node.InstanceList) {
 			node.gameObject.layer = nodeLayer;
 		}
 		Level.NodeAStar.Init ();
+		Level.Node.InitAll ();
 	}
 
 	void Update () {

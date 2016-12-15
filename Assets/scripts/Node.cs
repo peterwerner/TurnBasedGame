@@ -51,9 +51,27 @@ namespace Level {
 		Dictionary<Vector3, List<Node> > nodesLOS = new Dictionary<Vector3, List<Node> > ();
 		HashSet<Actor> actors = new HashSet<Actor> ();
 		Vector3 direction;
+		SphereCollider sphereCol; // Used only in LOS calculations
+
+		public static void InitAll () {
+			foreach (Node node in InstanceList) {
+				node.UpdateNeighbors (InstanceList);
+				node.sphereCol = node.gameObject.AddComponent<SphereCollider> ();
+			}
+			foreach (Node node in InstanceList) {
+				node.UpdateNodesLOS (InstanceList);
+			}
+			foreach (Node node in InstanceList) {
+				Destroy (node.gameObject.GetComponent<SphereCollider> ());
+				BoxCollider boxCollider = node.gameObject.AddComponent<BoxCollider> ();
+				boxCollider.size = new Vector3 (size, 0.02f, size);
+			}
+		}
 
 		void UpdateNodesLOS(List<Node> nodes) {
 			nodesLOS.Clear ();
+			sphereCol.radius = 0.3f * size;
+
 			Ray ray = new Ray (transform.position + transform.up * 0.26f * size, Vector3.zero);
 			RaycastHit hit;
 			RaycastHit[] hits;
@@ -187,24 +205,7 @@ namespace Level {
 		/* Lifecycle */
 	
 		void Awake () {
-			gameObject.AddComponent<SphereCollider> ().radius = 0.3f * size;
 			UpdateDirection ();
-		}
-
-		void Start() {
-			// TODO: do this at build time not at run time
-			UpdateNeighbors (Node.InstanceList);
-			UpdateNodesLOS (Node.InstanceList);
-		}
-
-		void OnMouseOver() {
-			ActorPlayer.OnHoverNode (this);
-		}
-		void OnMouseDown() {
-			ActorPlayer.OnClickNode (this);
-		}
-		void OnMouseExit() {
-			ActorPlayer.OnUnhoverNode (this);
 		}
 
 		void OnDrawGizmos() {
