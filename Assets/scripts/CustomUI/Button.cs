@@ -9,8 +9,6 @@ namespace CustomUI {
 		public delegate void Callback ();
 		public delegate bool CallbackBool ();
 
-		[SerializeField] float transitionTime = 1f;
-
 		RectTransform rect;
 		float currScale = 0, targetScale = 0; // normalized scale
 		Vector3 currPos = Vector3.zero, targetPos = Vector3.zero; // normalized position
@@ -57,9 +55,9 @@ namespace CustomUI {
 
 			interactable = isUseable();
 
-			currScale = Mathf.MoveTowards (currScale, targetScale, Time.deltaTime / transitionTime);
+			currScale = Mathf.MoveTowards (currScale, targetScale, Time.deltaTime / colors.fadeDuration);
 			rect.localScale = currScale * Vector3.one;
-			currPos = Vector3.MoveTowards (currPos, targetPos, Time.deltaTime / transitionTime);
+			currPos = Vector3.MoveTowards (currPos, targetPos, Time.deltaTime / colors.fadeDuration);
 			rect.localPosition = currPos * rect.rect.width;
 			// Optionally destroy this object if fully hidden
 			if (destroyOnHidden && Mathf.Approximately (currScale, 0) && Mathf.Approximately(targetScale, 0)) {
