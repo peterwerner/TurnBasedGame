@@ -11,10 +11,6 @@ public class ActorPatroller : ActorMove {
 	[SerializeField] protected Level.Node[] waypoints;
 	int waypointIndex = 0, step = 1;
 
-	protected override void OnTurnStart () {
-		this.Node = MovePath.Last();
-	}
-
 	protected override void UpdateMovePath() {
 		if (waypoints.Length <= 0) {
 			return;
@@ -27,13 +23,16 @@ public class ActorPatroller : ActorMove {
 		}
 	}
 
-	protected List<Level.Node> GetPath (bool allowWallNodes = true) {
-		if (this.Node == waypoints [waypointIndex]) {
+	protected List<Level.Node> GetPath (bool allowWallNodes = true, Level.Node startingNode = null) {
+		if (startingNode == null) {
+			startingNode = this.Node;
+		}
+		if (startingNode == waypoints [waypointIndex]) {
 			waypointIndex = GetNextWaypointIndex ();
 		}
 		List<Level.Node> path;
 		for (int attempts = 0; attempts < waypoints.Length; attempts++) {
-			path = Level.NodeAStar.ShortestPath (this.Node, waypoints [waypointIndex], allowWallNodes);
+			path = Level.NodeAStar.ShortestPath (startingNode, waypoints [waypointIndex], allowWallNodes);
 			if (path != null && path.Count > 0) {
 				return path;
 			} else {

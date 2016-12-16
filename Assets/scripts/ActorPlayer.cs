@@ -6,19 +6,38 @@ using UnityEngine;
 [RequireComponent(typeof(Inventory))]
 public class ActorPlayer : ActorMove {
 
+	Dictionary<Level.Node, List<Inventory.Item> > stagedPickups = new Dictionary<Level.Node, List<Inventory.Item> > ();
 	Level.Node nodeSelected;
 	Inventory inventory;
 	bool waitingForInput;
 
+	public void StagePickup (Level.Node node, Inventory.Item item) {
+		List<Inventory.Item> items;
+		if (!stagedPickups.TryGetValue (node, out items)) {
+			items = new List<Inventory.Item> ();
+			stagedPickups.Add (node, items);
+		}
+		stagedPickups[node].Add (item);
+	}
+
 	protected override void OnTurnStart () {
-		this.Node = MovePath [1];
 		lookDir = this.Node.transform.position - this.transform.position;
 		waitingForInput = false;
 		nodeSelected = null;
 	}
 
 	protected override void OnTurnEnd () {
+		stagedPickups.Clear ();
 		waitingForInput = true;
+	}
+
+	protected override void OnReachNode (Level.Node node) {
+		List<Inventory.Item> items;
+		if (stagedPickups.TryGetValue (node, out items)) {
+			foreach (Inventory.Item item in items) {
+				item.PickUp (inventory);
+			}
+		}
 	}
 
 	void Awake() {
@@ -37,16 +56,6 @@ public class ActorPlayer : ActorMove {
 					OnClickNode (node);
 				}
 			}
-		}
-	}
-
-	void OnHoverNode (Level.Node node) {
-		if (!GameManager.IsInTurn && waitingForInput) {
-		}
-	}
-
-	void OnUnhoverNode (Level.Node node) {
-		if (!GameManager.IsInTurn && waitingForInput) {
 		}
 	}
 

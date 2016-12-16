@@ -10,7 +10,6 @@ public class ActorPatrollerRook : ActorPatroller {
 		}
 		MovePath.Clear ();
 		MovePath.Add (this.Node);
-		Level.Node currNode = this.Node;
 		List<Level.Node> path = GetPath (false);
 		if (path != null && path.Count > 0) {
 			Vector3 direction = VectorUtil.ClosestCardinalDirection (path[0].transform.position - this.Node.transform.position);
@@ -18,16 +17,13 @@ public class ActorPatrollerRook : ActorPatroller {
 			for (int i = 0; i < waypoints.Length; i++) {
 				foreach (Level.Node node in path) {
 					if (VectorUtil.ClosestCardinalDirection (node.transform.position - prevNode.transform.position) != direction) {
-						this.Node = currNode;
 						return;
 					}
 					MovePath.Add (node);
 					prevNode = node;
 				}
-				this.Node = prevNode;
-				path = GetPath (false);
+				path = GetPath (false, prevNode);
 			}
 		}
-		this.Node = currNode;
 	}
 }

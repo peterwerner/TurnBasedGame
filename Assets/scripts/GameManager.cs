@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 
+[ExecuteInEditMode]
 public class GameManager : SingletonComponent<GameManager> {
 
 	[CustomEditor(typeof(GameManager))]

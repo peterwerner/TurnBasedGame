@@ -10,7 +10,10 @@ public class Actor : ListComponent<Actor> {
 	protected Character character;
 	protected Vector3 lookDir;
 
-	Level.Node node;
+	protected Dictionary<Level.Node, List<Actor> > stagedDeaths = new Dictionary<Level.Node, List<Actor> > ();
+	protected Dictionary<Level.Node, List<Actor> > stagedKills = new Dictionary<Level.Node, List<Actor> > ();
+
+	Level.Node closestNode, prevClosestNode;
 	[SerializeField] [Tooltip("Lower order actors move first")] int moveOrder = 0;
 	List<Level.Node> movePath;
 
@@ -43,70 +46,85 @@ public class Actor : ListComponent<Actor> {
 	}
 
 	static void ComputeInteractions () {
-		for (int i = 0; i < InstanceList.Count; i++) {
-			Actor a = InstanceList [i];
+		foreach (Actor a in InstanceList) {
 			// TODO: currently only handling player <-> NPC interactions (not NPC <-> NPC)
 			if (!(a is ActorPlayer)) {
 				continue;
 			}
-			for (int j = 0; j < InstanceList.Count; j++) {
-				Actor b = InstanceList [j];
-				if (a == b || !a.character.IsEnemy(b.character)) {
+			foreach (Actor b in InstanceList) {
+				if (a == b) {
 					continue;
 				}
-				// a moves before b
-				// 		meet if a's headless path intersects b's start point
-				//		meet if b's headless path intersects a's end point
-				if (a.moveOrder < b.moveOrder) {
-					if (a.MovePathHeadless.Contains (b.MovePath.First()))
-					{
-						int index = a.MovePath.IndexOf (b.MovePath.First ());
-						Vector3 aDir = a.MovePath [index].transform.position - a.MovePath [index - 1].transform.position;
-						Vector3 bDir = b.MovePath.Count >= 2 ? b.MovePath [1].transform.position - b.MovePath [0].transform.position : b.lookDir;
-						// If b is facing a (assume a is player), b kills a
-						if (VectorUtil.ClosestCardinalDirection (-1 * aDir) == VectorUtil.ClosestCardinalDirection (bDir)) {
-							AddKillInteraction (b, a);
-						} else {
-							AddKillInteraction (a, b);
+				// Player gets item
+				else if (b is Inventory.Item) {
+					if (a.MovePathHeadless.Contains (b.MovePath [0])) {
+						AddPickupInteraction (b.MovePath [0], (ActorPlayer)a, (Inventory.Item)b);
+					}
+				}
+				// Player meets enemy
+				else if (a.character.IsEnemy (b.character)) {
+					// a moves before b
+					// 		meet if a's headless path intersects b's start point
+					//		meet if b's headless path intersects a's end point
+					if (a.moveOrder < b.moveOrder) {
+						if (a.MovePathHeadless.Contains (b.MovePath.First ())) {
+							int index = a.MovePath.IndexOf (b.MovePath.First ());
+							Vector3 aDir = a.MovePath [index].transform.position - a.MovePath [index - 1].transform.position;
+							Vector3 bDir = b.MovePath.Count >= 2 ? b.MovePath [1].transform.position - b.MovePath [0].transform.position : b.lookDir;
+							// If b is facing a (assume a is player), b kills a
+							if (VectorUtil.ClosestCardinalDirection (-1 * aDir) == VectorUtil.ClosestCardinalDirection (bDir)) {
+								AddKillInteraction (b.MovePath.First(), b, a);
+							} else {
+								AddKillInteraction (b.MovePath.First(), a, b);
+							}
+						} else if (b.MovePathHeadless.Contains (a.MovePath.Last ())) {
+							AddKillInteraction (a.MovePath.Last(), b, a);
 						}
 					}
-					else if (b.MovePathHeadless.Contains (a.MovePath.Last()))
-					{
-						AddKillInteraction (b, a);
+					// a moves after b
+					// 		meet if a's headless path intersects b's end point
+					//		meet if b's headless path intersects a's start point
+					else if (a.moveOrder > b.moveOrder) {
+						// TODO: only need to handle this if player moves after any NPC
+						throw new UnityException ("not implemented (" + a.moveOrder + " > " + b.moveOrder + ")");
 					}
-				}
-				// a moves after b
-				// 		meet if a's headless path intersects b's end point
-				//		meet if b's headless path intersects a's start point
-				else if (a.moveOrder > b.moveOrder) {
-					// TODO: only need to handle this if player moves after any NPC
-					throw new UnityException ("not implemented (" + a.moveOrder + " > " + b.moveOrder + ")");
-				}
-				// a and b move at the same time
-				//		meet if their headless paths intersect
-				else {
-					// TODO: only need to handle this if player moves after any NPC
-					throw new UnityException ("not implemented (" + a.moveOrder + " == " + b.moveOrder + ")");
+					// a and b move at the same time
+					//		meet if their headless paths intersect
+					else {
+						// TODO: only need to handle this if player moves after any NPC
+						throw new UnityException ("not implemented (" + a.moveOrder + " == " + b.moveOrder + ")");
+					}
 				}
 			}
 		}
 	}
 
-	static void AddKillInteraction (Actor killer, Actor victim) {
-		// TODO: actually do stuff
+	static void AddKillInteraction (Level.Node node, Actor killer, Actor victim) {
 		if (killer.character && victim.character && killer.character.IsEnemy (victim.character)) {
-			victim.character.Alive = false;
+			print ("TODO kill");
 		}
 	}
 
+	static void AddPickupInteraction (Level.Node node, ActorPlayer player, Inventory.Item item) {
+		player.StagePickup (node, item);
+	}
+
+
 	public static void EndTurns () {
 		foreach (Actor actor in InstanceList) {
+			actor.stagedKills.Clear ();
+			actor.stagedDeaths.Clear ();
 			actor.OnTurnEnd ();
 		}
 	}
 
 	public static bool AllActorsFinished () {
-		return actorsFinished.Count >= InstanceList.Count;
+		foreach (Actor actor in InstanceList) {
+			if (!actorsFinished.Contains (actor)) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	protected void EndTurn () {
@@ -121,26 +139,15 @@ public class Actor : ListComponent<Actor> {
 		return !GameManager.IsInTurn || actorsFinished.Contains (this);
 	}
 		
-	public bool IsFacingTowards (Vector3 pos, bool horizontalOnly = true) {
-		Vector3 dir = pos - transform.position;
-		Vector3 look = lookDir;
-		if (horizontalOnly) {
-			dir.y = 0;
-			look.y = 0;
-		}
-		return Vector3.Angle (dir, look) <= 45;
-	}
 
 	public Character GetCharacter () {
 		return character;
 	}
 
 	public Level.Node Node {
-		get { return node; }
-		protected set { node = value; }
+		get { return closestNode; }
 	}
-
-
+		
 
 	public static void InitAll () {
 		foreach (Actor actor in InstanceList) {
@@ -150,11 +157,30 @@ public class Actor : ListComponent<Actor> {
 
 	void Init () {
 		character = GetComponent<Character> ();
-		node = Level.Node.ClosestTo (this.transform.position);
+		closestNode = Level.Node.ClosestTo (this.transform.position);
 		movePath = new List<Level.Node>();
-		movePath.Add (node);
+		movePath.Add (Node);
 		lookDir = transform.forward;
 		EndTurn ();
+	}
+
+	protected virtual void Update () {
+		if (MovePath.Count > 1) {
+			float sqrDistBest = Vector3.SqrMagnitude (closestNode.transform.position - transform.position);
+			foreach (Level.Node prospectiveNode in MovePath) {
+				float sqrDist = Vector3.SqrMagnitude (prospectiveNode.transform.position - transform.position);
+				if (sqrDist < sqrDistBest) {
+					sqrDistBest = sqrDist;
+					closestNode.RemoveActor (this);
+					closestNode = prospectiveNode;
+					closestNode.AddActor (this);
+				}
+			}
+			if (closestNode != prevClosestNode) {
+				OnReachNode (closestNode);
+				prevClosestNode = closestNode;
+			}
+		}
 	}
 
 	protected virtual void OnDrawGizmos() {
@@ -164,8 +190,8 @@ public class Actor : ListComponent<Actor> {
 	}
 
 	void OnDestroy () {
-		if (node) {
-			node.RemoveActor (this);
+		if (closestNode) {
+			closestNode.RemoveActor (this);
 		}
 	}
 		
@@ -174,5 +200,7 @@ public class Actor : ListComponent<Actor> {
 	protected virtual void OnTurnStart () { EndTurn (); }
 
 	protected virtual void OnTurnEnd () {}
+
+	protected virtual void OnReachNode (Level.Node node) {}
 
 }

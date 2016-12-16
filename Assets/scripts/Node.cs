@@ -60,10 +60,11 @@ namespace Level {
 				foreach (Collider col in node.gameObject.GetComponents<Collider> ()) {
 					DestroyImmediate (col);
 				}
+				node.sphereCol = node.gameObject.AddComponent<SphereCollider> ();
+				node.sphereCol.radius = 0.3f * size;
 			}
 			foreach (Node node in InstanceList) {
 				node.UpdateNeighbors (InstanceList);
-				node.sphereCol = node.gameObject.AddComponent<SphereCollider> ();
 			}
 			foreach (Node node in InstanceList) {
 				node.UpdateNodesLOS (InstanceList);
@@ -77,7 +78,6 @@ namespace Level {
 
 		void UpdateNodesLOS(List<Node> nodes) {
 			nodesLOS.Clear ();
-			sphereCol.radius = 0.3f * size;
 
 			Ray ray = new Ray (transform.position + transform.up * 0.26f * size, Vector3.zero);
 			RaycastHit hit;
@@ -107,7 +107,16 @@ namespace Level {
 			neighbors.Clear();
 			foreach (Node node in nodes){
 				if (IsConnectable(node)) {
-					neighbors.Add (node);
+					LayerMask layers = GameManager.GetNodeLOSLayers (); // All layers that block LOS (including node layer)
+					Vector3 thisPos = transform.position + transform.up * 0.26f * size;
+					Vector3 nodePos = node.transform.position + node.transform.up * 0.26f * size;
+					Ray ray = new Ray (thisPos, nodePos - thisPos);
+					RaycastHit hit;
+					if (Physics.Raycast(ray, out hit, Vector3.Distance(thisPos, nodePos) * 1.1f, layers)) {
+						if (hit.collider.GetComponent<Node> () == node) {
+							neighbors.Add (node);
+						}
+					}
 				}
 			}
 		}
@@ -227,8 +236,10 @@ namespace Level {
 
 		void OnValidate () {
 			directionsAllowed.Init ();
-			foreach (Node node in InstanceList) {
-				UpdateNeighbors (InstanceList);
+			if (GameManager.Instance) {
+				foreach (Node node in InstanceList) {
+					UpdateNeighbors (InstanceList);
+				}
 			}
 		}
 
