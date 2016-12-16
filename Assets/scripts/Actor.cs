@@ -18,6 +18,27 @@ public class Actor : ListComponent<Actor> {
 	List<Level.Node> movePath;
 
 
+	/* Turn lifecycle */
+
+	public static void StartTurns () {
+		actorsFinished.Clear();
+
+		ComputeInteractions ();
+
+		foreach (Actor actor in InstanceList) {
+			actor.OnTurnStart ();
+		}
+	}
+
+	public static void EndTurns () {
+		foreach (Actor actor in InstanceList) {
+			actor.stagedKills.Clear ();
+			actor.stagedDeaths.Clear ();
+			actor.OnTurnEnd ();
+		}
+	}
+
+
 	// current node -> intermediate nodes -> destination node (next current node)
 	protected List<Level.Node> MovePath {
 		get { return movePath; }
@@ -34,16 +55,9 @@ public class Actor : ListComponent<Actor> {
 
 	// current node -> intermediate nodes -> destination node (next current node)
 	protected virtual void UpdateMovePath() { MovePath = MovePath; }
-		
-	public static void StartTurns () {
-		actorsFinished.Clear();
 
-		ComputeInteractions ();
 
-		foreach (Actor actor in InstanceList) {
-			actor.OnTurnStart ();
-		}
-	}
+	/* Interactions between actors over the course of one turn */
 
 	static void ComputeInteractions () {
 		foreach (Actor a in InstanceList) {
@@ -151,13 +165,7 @@ public class Actor : ListComponent<Actor> {
 	}
 
 
-	public static void EndTurns () {
-		foreach (Actor actor in InstanceList) {
-			actor.stagedKills.Clear ();
-			actor.stagedDeaths.Clear ();
-			actor.OnTurnEnd ();
-		}
-	}
+	/* Turn lifecycle continued */
 
 	public static bool AllActorsFinished () {
 		foreach (Actor actor in InstanceList) {
@@ -181,14 +189,7 @@ public class Actor : ListComponent<Actor> {
 	}
 		
 
-	public Character GetCharacter () {
-		return character;
-	}
-
-	public Level.Node Node {
-		get { return closestNode; }
-	}
-		
+	/* Object lifecycle */
 
 	public static void InitAll () {
 		foreach (Actor actor in InstanceList) {
@@ -249,7 +250,19 @@ public class Actor : ListComponent<Actor> {
 		}
 	}
 		
-	// Events for subclasses to override
+
+	/* Helpers */
+
+	public Character GetCharacter () {
+		return character;
+	}
+
+	public Level.Node Node {
+		get { return closestNode; }
+	}
+
+
+	/* Events for subclasses to override */
 
 	protected virtual void OnTurnStart () { EndTurn (); }
 
