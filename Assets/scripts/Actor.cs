@@ -97,6 +97,7 @@ public class Actor : ListComponent<Actor> {
 				}
 			}
 		}
+		CleanupKillInteractions ();
 	}
 
 	static void AddKillInteraction (Level.Node node, Actor killer, Actor victim) {
@@ -120,6 +121,33 @@ public class Actor : ListComponent<Actor> {
 
 	static void AddPickupInteraction (Level.Node node, ActorPlayer player, Inventory.Item item) {
 		player.StagePickup (node, item);
+	}
+
+	// Ensure characters can only die once per turn (taking the first death event in their path)
+	static void CleanupKillInteractions () {
+		foreach (Actor actor in InstanceList) {
+			Actor killer = null;
+			foreach (Level.Node node in actor.MovePath) {
+				List<Actor> deaths;
+				if (actor.stagedDeaths.TryGetValue (node, out deaths)) {
+					if (killer) {
+						foreach (Actor otherKiller in deaths) {
+							otherKiller.stagedKills[node].Remove (actor);
+						}
+						actor.stagedDeaths.Remove (node);
+					} else {
+						if (deaths.Count > 0) {
+							for (int i = 1; i < deaths.Count; i++) {
+								deaths[i].stagedKills[node].Remove (actor);
+							}
+							killer = deaths [0];
+							deaths.Clear ();
+							deaths.Add (killer);
+						}
+					}
+				}
+			}
+		}
 	}
 
 
