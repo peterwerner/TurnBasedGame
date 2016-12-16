@@ -158,6 +158,7 @@ public class Actor : ListComponent<Actor> {
 	void Init () {
 		character = GetComponent<Character> ();
 		closestNode = Level.Node.ClosestTo (this.transform.position);
+		closestNode.AddActor (this);
 		movePath = new List<Level.Node>();
 		movePath.Add (Node);
 		lookDir = transform.forward;

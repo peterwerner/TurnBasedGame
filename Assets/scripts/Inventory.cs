@@ -9,6 +9,7 @@ public class Inventory : MonoBehaviour {
 
 		static bool isAnyInstanceBeingUsed = false;
 
+		[SerializeField] string label;
 		Inventory inventory;
 		bool isBeingUsed = false;
 		// UI
@@ -29,6 +30,7 @@ public class Inventory : MonoBehaviour {
 			button = Instantiate (this.inventory.buttonPrefab, this.inventory.itemButtonParent);
 			this.inventory.buttonListUI.Show (button);
 			button.Show (Use, CancelUse, IsUseable);
+			button.GetComponentInChildren<UnityEngine.UI.Text> ().text = label;
 		}
 
 		public void Use () {
