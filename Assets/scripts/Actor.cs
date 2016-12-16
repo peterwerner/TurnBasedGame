@@ -101,7 +101,20 @@ public class Actor : ListComponent<Actor> {
 
 	static void AddKillInteraction (Level.Node node, Actor killer, Actor victim) {
 		if (killer.character && victim.character && killer.character.IsEnemy (victim.character)) {
-			print ("TODO kill");
+			// Update killer
+			List<Actor> kills;
+			if (!killer.stagedKills.TryGetValue (node, out kills)) {
+				kills = new List<Actor> ();
+				killer.stagedKills [node] = kills;
+			}
+			killer.stagedKills [node].Add (victim);
+			// Update victim
+			List<Actor> deaths;
+			if (!victim.stagedDeaths.TryGetValue (node, out deaths)) {
+				deaths = new List<Actor> ();
+				victim.stagedDeaths [node] = deaths;
+			}
+			victim.stagedDeaths [node].Add (killer);
 		}
 	}
 
@@ -166,6 +179,7 @@ public class Actor : ListComponent<Actor> {
 	}
 
 	protected virtual void Update () {
+		// Update closest node
 		if (MovePath.Count > 1) {
 			float sqrDistBest = Vector3.SqrMagnitude (closestNode.transform.position - transform.position);
 			foreach (Level.Node prospectiveNode in MovePath) {
@@ -180,6 +194,17 @@ public class Actor : ListComponent<Actor> {
 			if (closestNode != prevClosestNode) {
 				OnReachNode (closestNode);
 				prevClosestNode = closestNode;
+			}
+		}
+		// Handle kills and deaths
+		List<Actor> kills;
+		if (stagedKills.TryGetValue (this.Node, out kills)) {
+			for (int i = kills.Count - 1; i >= 0; i--) {
+				if (kills[i].Node == this.Node) {
+					OnKill (kills[i]);
+					kills [i].stagedDeaths [this.Node].Remove (this);
+					kills.RemoveAt (i);
+				}
 			}
 		}
 	}
@@ -203,5 +228,11 @@ public class Actor : ListComponent<Actor> {
 	protected virtual void OnTurnEnd () {}
 
 	protected virtual void OnReachNode (Level.Node node) {}
+
+	protected virtual void OnKill (Actor actor) { 
+		if (actor.character) {
+			actor.character.Alive = false;
+		}
+	}
 
 }

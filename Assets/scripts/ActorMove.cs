@@ -7,6 +7,7 @@ public abstract class ActorMove : Actor {
 
 	[SerializeField] float moveSpeed = 5f;
 	int index = 0;
+	bool waiting = false;
 
 	protected override void OnTurnStart () {}
 
@@ -20,12 +21,27 @@ public abstract class ActorMove : Actor {
 		transform.LookAt (transform.position + lookDir);
 		if (!IsTurnEnded () && Mathf.Approximately(Vector3.Distance(transform.position, MovePath[index].transform.position), 0f)) {
 			if (index < MovePath.Count - 1) {
-				index++;
+				if (!ShouldWait()) {
+					index++;
+				}
 			} else {
 				index = 0;
 				EndTurn ();
 			}
 		}
+	}
+
+	// Should this wait at the current node? (for a kill / death event)
+	bool ShouldWait () {
+		List<Actor> deaths;
+		if (stagedDeaths.TryGetValue (this.Node, out deaths) && deaths.Count > 0) {
+			return true;
+		}
+		List<Actor> kills;
+		if (stagedKills.TryGetValue (this.Node, out kills) && kills.Count > 0) {
+			return true;
+		}
+		return false;
 	}
 
 }
