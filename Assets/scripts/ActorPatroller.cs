@@ -27,13 +27,13 @@ public class ActorPatroller : ActorMove {
 		}
 	}
 
-	protected List<Level.Node> GetPath () {
+	protected List<Level.Node> GetPath (bool allowWallNodes = true) {
 		if (this.Node == waypoints [waypointIndex]) {
 			waypointIndex = GetNextWaypointIndex ();
 		}
 		List<Level.Node> path;
 		for (int attempts = 0; attempts < waypoints.Length; attempts++) {
-			path = Level.NodeAStar.ShortestPath (this.Node, waypoints [waypointIndex]);
+			path = Level.NodeAStar.ShortestPath (this.Node, waypoints [waypointIndex], allowWallNodes);
 			if (path != null && path.Count > 0) {
 				return path;
 			} else {

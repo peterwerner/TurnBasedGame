@@ -93,7 +93,10 @@ public class Actor : ListComponent<Actor> {
 	}
 
 	static void AddKillInteraction (Actor killer, Actor victim) {
-		print (killer + " kills " + victim);
+		// TODO: actually do stuff
+		if (killer.character && victim.character && killer.character.IsEnemy (victim.character)) {
+			victim.character.Alive = false;
+		}
 	}
 
 	public static void EndTurns () {
@@ -108,11 +111,9 @@ public class Actor : ListComponent<Actor> {
 
 	protected void EndTurn () {
 		actorsFinished.Add(this);
-		foreach (Actor actor in InstanceList) {
-			actor.UpdateMovePath ();
-			if (actor.MovePath.Count <= 0 || actor.MovePath [0] != actor.Node) {
-				throw new UnityException ("Actor MovePath must start with the current node");
-			}
+		UpdateMovePath ();
+		if (MovePath.Count <= 0 || MovePath [0] != Node) {
+			throw new UnityException ("Actor MovePath must start with the current node");
 		}
 	}
 
@@ -153,6 +154,7 @@ public class Actor : ListComponent<Actor> {
 		movePath = new List<Level.Node>();
 		movePath.Add (node);
 		lookDir = transform.forward;
+		EndTurn ();
 	}
 
 	protected virtual void OnDrawGizmos() {

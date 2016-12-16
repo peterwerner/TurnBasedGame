@@ -21,7 +21,10 @@ namespace Level {
 		}
 
 		/// <summary>Returns the shortest path from start (exclusive) to destination (inclusive)</summary>
-		public static List<Node> ShortestPath (Node start, Node destination) {
+		public static List<Node> ShortestPath (Node start, Node destination, bool allowWallNodes = true) {
+			if (!allowWallNodes && (start.IsWall() || destination.IsWall())) {
+				return null;
+			}
 			List<Node> path = new List<Node> ();
 			if (start == destination)
 				return path;
@@ -47,7 +50,7 @@ namespace Level {
 					// Calculate but do not store successor's prior cost
 					float g_prospective = meta[current].g + 1;
 					// If the node has not been discovered, add it to open
-					if (!open.Contains(successor))
+					if (!open.Contains(successor) && (allowWallNodes || !successor.IsWall()))
 						open.Add(successor);
 					// If successor has been discovered but not fully evaluated, update it IFF we can improve its cost
 					else if (g_prospective >= meta[successor].g) 
