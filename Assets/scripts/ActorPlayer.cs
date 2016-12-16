@@ -8,49 +8,13 @@ public class ActorPlayer : ActorMove {
 
 	Level.Node nodeSelected;
 	Inventory inventory;
-	bool waitingForInput = true;
-
-	protected override void OnMeetCrossing (Actor other) {
-		if (character && character.IsEnemy(other.GetCharacter())) {
-			// TODO handle this somehow
-			// Enemy kills player
-			if (other.IsFacingTowards (transform.position)) {
-				character.Alive = false;
-				print ("PLAYER DIED");
-				UnityEditor.EditorApplication.isPlaying = false; // editor only
-			}
-		}
-	}
-
-	protected override void OnMeet (Actor other) {
-		Character otherCharacter = other.GetCharacter ();
-		// Meet another character
-		if (otherCharacter) {
-			if (character.IsEnemy (otherCharacter)) {
-				// TODO handle this somehow
-				// Enemy kills player
-				if (other.IsFacingTowards (transform.position)) {
-					character.Alive = false;
-					print ("PLAYER DIED");
-					UnityEditor.EditorApplication.isPlaying = false; // editor only
-				}
-				// Player kills enemy
-				else {
-					other.GetCharacter ().Alive = false;
-					print ("Player killed enemy");
-				}
-			}
-		} 
-		// Meet an item pickup
-		else if (other is Inventory.Item) {
-			Inventory.Item item = (Inventory.Item) other;
-			item.PickUp (inventory);
-		}
-	}
+	bool waitingForInput;
 
 	protected override void OnTurnStart () {
+		this.Node = MovePath [1];
+		lookDir = this.Node.transform.position - this.transform.position;
 		waitingForInput = false;
-		TryMoveTo (nodeSelected);
+		nodeSelected = null;
 	}
 
 	protected override void OnTurnEnd () {
@@ -88,8 +52,9 @@ public class ActorPlayer : ActorMove {
 
 	void OnClickNode (Level.Node node) {
 		if (GameManager.PlayerCanMove && waitingForInput) {
-			if (CouldMoveTo (node)) {
+			if (this.Node.HasNeighbor (node)) {
 				nodeSelected = node;
+				UpdateMovePath ();
 				GameManager.StartTurn ();
 			} else {
 				print ("BAD MOVE");
@@ -97,12 +62,20 @@ public class ActorPlayer : ActorMove {
 		}
 	}
 
+	protected override void UpdateMovePath() {
+		MovePath.Clear ();
+		MovePath.Add (this.Node);
+		if (nodeSelected) {
+			MovePath.Add (nodeSelected);
+		}
+	}
+
 	protected override void OnDrawGizmos() {
 		base.OnDrawGizmos ();
-		if (node) {
+		if (this.Node) {
 			Actor actor;
 			Vector3 pos = transform.position + transform.up * 0.4f;
-			Dictionary<Vector3, List<Actor> > actorsInLOS = node.GetActorsInLOS();
+			Dictionary<Vector3, List<Actor> > actorsInLOS = this.Node.GetActorsInLOS();
 			foreach (Vector3 direction in actorsInLOS.Keys) {
 				Gizmos.color = Color.yellow;
 				for (int i = 1; i < actorsInLOS [direction].Count; i++) {

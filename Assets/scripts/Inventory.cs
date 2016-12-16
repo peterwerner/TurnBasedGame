@@ -15,8 +15,8 @@ public class Inventory : MonoBehaviour {
 		CustomUI.Button button;
 
 		public void PickUp (Inventory inventory) {
-			if (node) {
-				node.RemoveActor (this);
+			if (this.Node) {
+				this.Node.RemoveActor (this);
 			}
 			this.inventory = inventory;
 			this.inventory.items.Add (this);

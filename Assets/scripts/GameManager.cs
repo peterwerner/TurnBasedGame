@@ -29,7 +29,6 @@ public class GameManager : SingletonComponent<GameManager> {
 		}
 		Instance.isInTurn = true;
 		Actor.StartTurns ();
-		Actor.HandleInteractions ();
 		return true;
 	}
 
@@ -55,6 +54,8 @@ public class GameManager : SingletonComponent<GameManager> {
 		}
 		Level.NodeAStar.Init ();
 		Level.Node.InitAll ();
+		Actor.InitAll ();
+		Actor.EndTurns ();
 	}
 
 	void Update () {

@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 public class ActorPatroller : ActorMove {
 
@@ -8,26 +9,41 @@ public class ActorPatroller : ActorMove {
 
 	[SerializeField] LoopTypes loopType;
 	[SerializeField] protected Level.Node[] waypoints;
-	protected List<Level.Node> path;
-	protected int waypointIndex = 0, step = 1;
+	int waypointIndex = 0, step = 1;
 
 	protected override void OnTurnStart () {
-		MoveToNextNode ();
+		this.Node = MovePath.Last();
 	}
 
-	protected void MoveToNextNode () {
-		if (path == null) {
-			path = Level.NodeAStar.ShortestPath (node, waypoints [waypointIndex]);
-		} 
-		if (node == waypoints [waypointIndex]) {
-			waypointIndex = GetNextWaypointIndex ();
-			path = Level.NodeAStar.ShortestPath (node, waypoints [waypointIndex]);
+	protected override void UpdateMovePath() {
+		if (waypoints.Length <= 0) {
+			return;
 		}
-		TryMoveTo (path [0]);
-		path.RemoveAt (0);
+		MovePath.Clear ();
+		MovePath.Add (this.Node);
+		List<Level.Node> path = GetPath ();
+		if (path != null && path.Count > 0) {
+			MovePath.Add (path [0]);
+		}
 	}
 
-	protected int GetNextWaypointIndex () {
+	protected List<Level.Node> GetPath () {
+		if (this.Node == waypoints [waypointIndex]) {
+			waypointIndex = GetNextWaypointIndex ();
+		}
+		List<Level.Node> path;
+		for (int attempts = 0; attempts < waypoints.Length; attempts++) {
+			path = Level.NodeAStar.ShortestPath (this.Node, waypoints [waypointIndex]);
+			if (path != null && path.Count > 0) {
+				return path;
+			} else {
+				waypointIndex = GetNextWaypointIndex ();
+			}
+		}
+		return null;
+	}
+
+	int GetNextWaypointIndex () {
 		int nextIndex = waypointIndex + step;
 		if (nextIndex >= waypoints.Length || nextIndex < 0) {
 			if (loopType == LoopTypes.LOOP) {

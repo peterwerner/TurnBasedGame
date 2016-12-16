@@ -127,12 +127,7 @@ namespace Level {
 			return neighbors.ToArray();
 		}
 	
-		public void AddActor (Actor actor, bool doCallMeetCallback = false) {
-			if (doCallMeetCallback) {
-				foreach (Actor other in actors) {
-					actor.Meet (other);
-				}
-			}
+		public void AddActor (Actor actor) {
 			actors.Add(actor);
 		}
 
