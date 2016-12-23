@@ -24,4 +24,13 @@ public class VectorUtil : MonoBehaviour {
 		}
 		return closest;
 	}
+
+	public static Vector3 Round (Vector3 v, int decimalPlaces = 0) {
+		float factor = Mathf.Pow (10, decimalPlaces);
+		return new Vector3 (
+			Mathf.Round (v.x * factor) / factor,
+			Mathf.Round (v.y * factor) / factor,
+			Mathf.Round (v.z * factor) / factor
+		);
+	}
 }

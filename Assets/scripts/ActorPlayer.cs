@@ -49,7 +49,7 @@ public class ActorPlayer : ActorMove {
 		if (Input.GetMouseButtonDown(0)) {
 			Ray ray = Camera.main.ScreenPointToRay (Input.mousePosition);
 			RaycastHit hit;
-			LayerMask layerMask = 1 << GameManager.GetNodeLayer ();
+			LayerMask layerMask = 1 << Constants.nodeLayer;
 			if (Physics.Raycast (ray, out hit, Mathf.Infinity, layerMask)) {
 				Level.Node node = hit.collider.GetComponent<Level.Node> ();
 				if (node) {

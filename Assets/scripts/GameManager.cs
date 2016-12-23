@@ -20,7 +20,6 @@ public class GameManager : SingletonComponent<GameManager> {
 		}
 	}
 
-	[SerializeField] int nodeLayer = 4;
 	[SerializeField] LayerMask nodeLineOfSightLayers;
 	bool isInTurn = false;
 
@@ -45,13 +44,9 @@ public class GameManager : SingletonComponent<GameManager> {
 		return Instance.nodeLineOfSightLayers;
 	}
 
-	public static int GetNodeLayer () {
-		return Instance.nodeLayer;
-	}
-
 	void Start () {
 		foreach (Level.Node node in Level.Node.InstanceList) {
-			node.gameObject.layer = nodeLayer;
+			node.gameObject.layer = Constants.nodeLayer;
 		}
 		Level.NodeAStar.Init ();
 		Level.Node.InitAll ();

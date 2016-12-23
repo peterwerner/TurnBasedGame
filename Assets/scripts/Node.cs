@@ -121,15 +121,8 @@ namespace Level {
 			}
 		}
 
-		void UpdateDirection() {
-			float angleMin = 181;
-			foreach (Vector3 direction in directionVectors) {
-				float angle = Vector3.Angle (direction, transform.up);
-				if (angle < angleMin) {
-					angleMin = angle;
-					this.direction = direction;
-				}
-			}
+		public void UpdateDirection() {
+			direction = VectorUtil.ClosestCardinalDirection (transform.up);
 		}
 
 		public Node[] GetNeighbors () {
@@ -166,7 +159,7 @@ namespace Level {
 
 		bool IsConnectable (Node other) {
 			// If other is within 1 'size' of this, it may be connectable
-			if (other != this && Vector3.SqrMagnitude (transform.position - other.transform.position) <= size * size * 1.1f) {
+			if (other != this && IsCloseTo(other.transform.position)) {
 				// Same plane, must be adjacent
 				if (direction == other.direction) {
 					return Mathf.Approximately (
@@ -207,6 +200,10 @@ namespace Level {
 
 		public Vector3 Direction {
 			get { return direction; }
+		}
+
+		public bool IsCloseTo (Vector3 pos) {
+			return Vector3.SqrMagnitude (transform.position - pos) <= size * size * 1.1f;
 		}
 
 		public bool IsWall () {
