@@ -40,4 +40,5 @@ public class TileGhost : MonoBehaviour {
 			return mode == modeHorizontal;
 		}
 	}
+
 }
