@@ -6,14 +6,6 @@ using UnityEngine;
 [RequireComponent(typeof(Collider))]
 public class TileGhost : MonoBehaviour {
 
-	public enum Type { VERTICAL, HORIZONTAL };
-	public enum Mode { FACE, NONFACE };
-
-	public static Mode modeVertical = Mode.FACE;
-	public static Mode modeHorizontal = Mode.NONFACE;
-
-	[SerializeField] Type type;
-	[SerializeField] Mode mode;
 	new Renderer renderer;
 	new Collider collider;
 
@@ -30,15 +22,7 @@ public class TileGhost : MonoBehaviour {
 	}
 
 	bool IsVisible () {
-		return IsRightMode () && Vector3.Angle (transform.forward, Camera.main.transform.forward) < 90;
-	}
-
-	bool IsRightMode () {
-		if (type == Type.VERTICAL) {
-			return mode == modeVertical;
-		} else {
-			return mode == modeHorizontal;
-		}
+		return Vector3.Angle (transform.forward, Camera.main.transform.forward) < 90;
 	}
 
 }

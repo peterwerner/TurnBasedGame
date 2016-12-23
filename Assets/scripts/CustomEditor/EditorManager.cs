@@ -4,18 +4,26 @@ using UnityEngine;
 
 public class EditorManager : SingletonComponent<EditorManager> {
 
+	[SerializeField] float cameraMoveSpeed = 10f;
+	[SerializeField] float cameraFocusSize = 2f;
+	[SerializeField] float cameraFocusSpeed = 1f;
+
 	[SerializeField] TileGhostSet ghostSetPrefabHorizontal = null, ghostSetPrefabVertical = null;
 	[SerializeField] Level.Node nodePrefab;
+	[SerializeField] Material materialSelected, materialDefault;
 	TileGhostSet ghostSetHorizontal, ghostSetVertical;
 	Level.Node nodeSelected;
+
 
 	void Start () {
 		ghostSetHorizontal = Instantiate (ghostSetPrefabHorizontal);
 		ghostSetVertical = Instantiate (ghostSetPrefabVertical);
-		Deselect ();
+		Select (Instantiate (nodePrefab));
+		Camera.main.transform.position = nodeSelected.transform.position - 100 * Camera.main.transform.forward;
 	}
 
 	void Update () {
+		// Handle input
 		if (Input.GetMouseButtonDown(0)) {
 			Ray ray = Camera.main.ScreenPointToRay (Input.mousePosition);
 			RaycastHit hit;
@@ -36,12 +44,18 @@ public class EditorManager : SingletonComponent<EditorManager> {
 				// Deselect ();
 			}
 		}
+		// Handle camera movement
+		if (nodeSelected) {
+			Vector3 targetPos = nodeSelected.transform.position - 100 * Camera.main.transform.forward;
+			Camera.main.transform.position = Vector3.MoveTowards (Camera.main.transform.position, targetPos, cameraMoveSpeed * Time.deltaTime);
+			Camera.main.orthographicSize = Mathf.MoveTowards (Camera.main.orthographicSize, cameraFocusSize, cameraFocusSpeed * Time.deltaTime);
+		}
 	}
 
 	void Select (Level.Node node) {
 		Deselect ();
-		node.UpdateDirection ();
 		nodeSelected = node;
+		node.UpdateDirection ();
 		TileGhostSet ghostSet = node.IsWall () ? ghostSetVertical : ghostSetHorizontal;
 		ghostSet.transform.position = node.transform.position;
 		ghostSet.transform.rotation = node.transform.rotation;
@@ -71,38 +85,26 @@ public class EditorManager : SingletonComponent<EditorManager> {
 			}
 			ghost.gameObject.SetActive (!occupied);
 		}
-		EditorUI.Instance.SetNodeSelected (true);
+		nodeSelected.GetComponentInChildren<Renderer> ().material = materialSelected;
 	}
 
 	void Deselect () {
 		ghostSetHorizontal.gameObject.SetActive (false);
 		ghostSetVertical.gameObject.SetActive (false);
+		if (nodeSelected) {
+			nodeSelected.GetComponentInChildren<Renderer> ().material = materialDefault;
+		}
 		nodeSelected = null;
-		EditorUI.Instance.SetNodeSelected (false);
 	}
 
 	void CreateTile (TileGhost ghost) {
 		Level.Node node = Instantiate (nodePrefab);
 		node.transform.position = ghost.transform.position;
-		node.transform.up = - ghost.transform.forward;
+		node.transform.rotation = ghost.transform.rotation;
+		node.transform.RotateAround (node.transform.position, node.transform.right, -90);
 		Select (node);
 	}
 		
 	/* Events / actions triggered by UI */
-
-	public void ToggleGhostDirection () {
-		if (nodeSelected) {
-			if (nodeSelected.IsWall ()) {
-				TileGhost.modeVertical = TileGhost.modeVertical == TileGhost.Mode.FACE
-					? TileGhost.Mode.NONFACE
-					: TileGhost.Mode.FACE;
-			} else {
-				TileGhost.modeHorizontal = TileGhost.modeHorizontal == TileGhost.Mode.FACE
-					? TileGhost.Mode.NONFACE
-					: TileGhost.Mode.FACE;
-			}
-			Select (nodeSelected);
-		}
-	}
 
 }
