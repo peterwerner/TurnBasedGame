@@ -19,7 +19,7 @@ public class EditorManager : SingletonComponent<EditorManager> {
 		ghostSetHorizontal = Instantiate (ghostSetPrefabHorizontal);
 		ghostSetVertical = Instantiate (ghostSetPrefabVertical);
 		Select (Instantiate (nodePrefab));
-		Camera.main.transform.position = nodeSelected.transform.position - 100 * Camera.main.transform.forward;
+		Camera.main.transform.position = nodeSelected.transform.position - 10 * Camera.main.transform.forward;
 	}
 
 	void Update () {
@@ -46,7 +46,7 @@ public class EditorManager : SingletonComponent<EditorManager> {
 		}
 		// Handle camera movement
 		if (nodeSelected) {
-			Vector3 targetPos = nodeSelected.transform.position - 100 * Camera.main.transform.forward;
+			Vector3 targetPos = nodeSelected.transform.position - 10 * Camera.main.transform.forward;
 			Camera.main.transform.position = Vector3.MoveTowards (Camera.main.transform.position, targetPos, cameraMoveSpeed * Time.deltaTime);
 			Camera.main.orthographicSize = Mathf.MoveTowards (Camera.main.orthographicSize, cameraFocusSize, cameraFocusSpeed * Time.deltaTime);
 		}
@@ -102,6 +102,13 @@ public class EditorManager : SingletonComponent<EditorManager> {
 		node.transform.position = ghost.transform.position;
 		node.transform.rotation = ghost.transform.rotation;
 		node.transform.RotateAround (node.transform.position, node.transform.right, -90);
+		node.UpdateDirection ();
+		if (node.IsWall ()) {
+			for (int i = 0; i < 2; i++) {
+				float angle = Vector3.Angle (node.transform.forward, Vector3.down);
+				node.transform.RotateAround (node.transform.position, node.transform.up, angle);
+			}
+		}
 		Select (node);
 	}
 		
