@@ -11,10 +11,9 @@ public class VectorUtil : MonoBehaviour {
 		Vector3.up, Vector3.down, Vector3.left, Vector3.right, Vector3.forward, Vector3.back
 	};
 
-	public static Vector3 ClosestCardinalDirection (Vector3 targetDir, bool includeVertical = true) {
-		float angleMin = 360;
+	public static Vector3 ClosestDirection (Vector3 targetDir, IEnumerable<Vector3> dirs) {
+		float angleMin = Mathf.Infinity;
 		Vector3 closest = Vector3.zero;
-		Vector3[] dirs = includeVertical ? directionsAll : directionsHorz;
 		foreach (Vector3 dir in dirs) {
 			float angle = Vector3.Angle (dir, targetDir);
 			if (angle < angleMin) {
@@ -23,6 +22,10 @@ public class VectorUtil : MonoBehaviour {
 			}
 		}
 		return closest;
+	}
+
+	public static Vector3 ClosestCardinalDirection (Vector3 targetDir, bool includeVertical = true) {
+		return ClosestDirection (targetDir, includeVertical ? directionsAll : directionsHorz);
 	}
 
 	public static Vector3 Round (Vector3 v, int decimalPlaces = 0) {

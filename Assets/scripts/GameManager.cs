@@ -20,7 +20,6 @@ public class GameManager : SingletonComponent<GameManager> {
 		}
 	}
 
-	[SerializeField] LayerMask nodeLineOfSightLayers;
 	bool isInTurn = false;
 
 	public static bool StartTurn() {
@@ -41,7 +40,7 @@ public class GameManager : SingletonComponent<GameManager> {
 	}
 
 	public static LayerMask GetNodeLOSLayers () {
-		return Instance.nodeLineOfSightLayers;
+		return (1 << Constants.nodeLayer) | (1 << Constants.obstacleLayer);
 	}
 
 	void Start () {
